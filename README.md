@@ -7,7 +7,7 @@ au son, compte, et fait progresser par paliers.
 App personnelle, séparée de PALIER et de la page de cohérence cardiaque `cc.s1t3.link`. Pas un avis
 médical : le bilan kiné prime.
 
-URL : https://aplomb.s1t3.link (à mettre en place)
+URL : https://aplomb.s1t3.link
 
 ## Documents
 
@@ -18,28 +18,43 @@ URL : https://aplomb.s1t3.link (à mettre en place)
 
 ## Structure
 
-| Chemin | Rôle | État |
-|---|---|---|
-| `index.html` | Interface, écrans, moteur audio repris de `cc` | à venir |
-| `logique.js` | Fonctions pures : action du jour, progression, dates, migration | à venir |
-| `tests/` | Tests `node:test`, sans dépendance | à venir |
-| `deploy.sh` | Mise en ligne depuis CloudShell | à venir |
+| Chemin | Rôle |
+|---|---|
+| `index.html` | Interface, écrans, moteur audio repris de `cc` |
+| `logique.js` | Fonctions pures : contenu, plan du bloc, timelines, progression, journal, import |
+| `tests/logique.test.js` | Tests `node:test`, sans dépendance |
+| `deploy.sh` | Mise en ligne depuis CloudShell |
+
+La version est la constante `VERSION` de `logique.js` ; `index.html` charge `logique.js?v=<version>`
+(les deux doivent concorder, `deploy.sh` le vérifie). Tag Git `v<version>`.
+
+## Fonctionnement (v0.1)
+
+- **Accueil** : étape en cours, séries de blocs propres, état du jour, lancement du bloc.
+- **Bloc** : un écran par exercice (consignes, dosage, lien vidéo, « Prêt »), puis séance minutée
+  guidée au son ; deux déclarations en fin de bloc et propositions de palier.
+- **Signaux d'arrêt** : bouton permanent en haut de chaque écran ; pendant une séance, il la met en
+  pause.
+- **Vidéos, Journal, Réglages** : liens regroupés, historique et export ou import, rythme, objectif de
+  cohérence et son.
+
+Signaux sonores : bips aigu, médium, grave pour la respiration et les répétitions ; deux notes qui
+montent pour une tenue, deux qui descendent pour un relâchement, trois notes pour un changement de
+côté, arpège de fin ; trois tics avant un départ.
 
 ## Développement
 
 - Ouvrir `index.html` en double-clic suffit : `logique.js` est un script classique, pas un module
   ES, pour fonctionner en `file://`. Le Wake Lock, lui, demande HTTPS.
-- Tests : `node --test tests/` (Node 18 ou plus), identique sous PowerShell et bash.
+- Tests : `node --test tests/logique.test.js` (Node 18 ou plus), identique sous PowerShell et bash.
 
 ## Hébergement AWS (compte perso)
-
-État : à créer.
 
 | Élément | Valeur |
 |---|---|
 | Domaine | `aplomb.s1t3.link` (hosted zone Route 53 `s1t3.link`) |
-| Bucket S3 | `aplomb.s1t3.link`, région `eu-west-3`, privé (Block Public Access, pas de static website hosting) |
-| CloudFront | Distribution pay-as-you-go, OAC, redirection HTTP vers HTTPS, default root object `index.html`, cache policy CachingOptimized |
+| Bucket S3 | `aplomb.s1t3.link`, région `eu-west-3`, privé (Block Public Access, pas de static website hosting), politique limitée à `s3:GetObject` pour la distribution |
+| CloudFront | Distribution pay-as-you-go, `PriceClass_100`, HTTP/2 et 3, IPv6, OAC, redirection HTTP vers HTTPS, default root object `index.html`, cache policy CachingOptimized |
 | Certificat | ACM en `us-east-1`, validation DNS |
 | DNS | Alias A et AAAA `aplomb` vers la distribution |
 
@@ -47,8 +62,25 @@ URL : https://aplomb.s1t3.link (à mettre en place)
 
 Dans la session CloudShell ouverte en `us-east-1`, à la racine du clone `~/aplomb`. On ne change
 jamais la région de CloudShell : chaque commande porte son `--region` (`us-east-1` pour CloudFront
-et ACM, `eu-west-3` pour S3). Le clone passe par une deploy key SSH en lecture seule. Procédure
-détaillée écrite avec `deploy.sh`.
+et ACM, `eu-west-3` pour S3). Le clone passe par une deploy key SSH en lecture seule
+(`~/.ssh/aplomb_deploy`, hôte `github-aplomb` dans `~/.ssh/config`).
+
+```bash
+cd ~/aplomb && git pull && bash deploy.sh
+```
+
+Le script vérifie la concordance des versions, signale un HEAD sans le tag attendu, lance les tests,
+copie `logique.js` puis `index.html` (`Cache-Control: max-age=300`), puis invalide `/*` et attend la
+fin. L'invalidation est indispensable : la cache policy CachingOptimized ignore la chaîne de
+requête, donc `?v=` ne renouvelle que le cache du navigateur. Une invalidation `/*` compte pour un
+chemin dans le quota gratuit de 1 000 par mois.
+
+ID de la distribution, si besoin :
+
+```bash
+aws cloudfront list-distributions --region us-east-1 \
+  --query "DistributionList.Items[?Aliases.Items && contains(Aliases.Items, 'aplomb.s1t3.link')].Id | [0]" --output text
+```
 
 ## Points d'attention
 

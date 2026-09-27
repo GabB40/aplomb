@@ -32,7 +32,16 @@ micro-pause ; la langue au palais fait aussi partie de la consigne des tenues.
 
 Protocole 365 : trois fois par jour, six respirations par minute, cinq minutes, respiration
 abdominale lente et ample. Le tempo par défaut repris de `cc` (55 BPM, 5 temps par phase) donne
-5,5 respirations par minute. Une cohérence compte quand elle atteint l'objectif de 5 minutes.
+5,5 respirations par minute.
+
+Respiration abdominale : une main sur le ventre, l'autre en haut de la poitrine ; le ventre monte à
+l'inspiration, la poitrine bouge peu, épaules et cou relâchés. Une respiration haute recrute à chaque
+inspiration les muscles accessoires (SCOM, scalènes, trapèzes supérieurs) : c'est l'enjeu pour la
+nuque autant que la cohérence elle-même. Consigne rappelée au début de chaque cohérence et de la
+séance couplée.
+
+Chaque cohérence est enregistrée avec sa durée réelle. Le compteur du jour ne compte que celles qui
+atteignent l'objectif, réglable, 5 minutes par défaut.
 
 | Créneau | Horaire | Action principale |
 |---|---|---|
@@ -47,7 +56,8 @@ l'usage.
 
 Déroulé :
 
-1. **Séance couplée, allongé** : cohérence de 5 minutes, qui compte comme l'une des trois du jour.
+1. **Séance couplée, allongé** : cohérence à l'objectif (5 minutes par défaut, au moins le temps des
+   tenues), qui compte comme l'une des trois du jour.
    Les premiers cycles alternent un cycle de tenue et un cycle de relâchement ; le reste est de la
    cohérence libre. Dans le bloc, le rythme est verrouillé à 5 temps d'inspiration et 5
    d'expiration (le tempo reste réglable) ; au tempo par défaut, un cycle dure 10,9 s et 10 tenues
@@ -56,6 +66,21 @@ Déroulé :
 3. **Isométries, assis** (étape 3 seulement).
 4. **Étirements.**
 5. **Fin** : deux déclarations (voir Progression) et bouton gêne.
+
+### Cadences
+
+Au tempo par défaut, un temps dure 1,09 s.
+
+- **Entre deux exercices** : l'app attend « Prêt », puis laisse 5 s de mise en place (trois tics à la
+  fin) avant le premier signal.
+- **Y** : montée 1 temps, tenue 2 temps (2,2 s), descente 1 temps, pause 1 temps, soit environ 5,5 s
+  par répétition. 30 s de repos entre les deux séries.
+- **Élévateur de la scapula** : gauche, droite, gauche, droite ; 5 s de transition annoncée entre
+  chaque tenue.
+- **Sous-occipitaux** : 3 tenues de 6 s d'un côté, séparées par 3 s de relâchement, 5 s de transition,
+  puis l'autre côté.
+- **Isométries (étape 3)** : tenue d'une phase, repos d'une phase entre les répétitions, 5 s de
+  transition entre les directions (à confirmer avant d'atteindre l'étape 3).
 
 ### Étape 1
 
@@ -142,7 +167,8 @@ usure des dents, maux de tête au réveil.
 
 ## Relevé de référence
 
-Tension ressentie notée à J0 (avant la première séance), J21 et J42, hors de l'app et hors du dépôt.
+Tension ressentie notée à J0 (avant la première séance), J7, J21 et J42, hors de l'app et hors du
+dépôt. Chaque note porte sur les 7 derniers jours.
 Le ressenti de Gabriel prime sur le journal de l'app.
 
 ## Liens vidéo

@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#22272b">
+<title>APLOMB</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2322272b'/%3E%3Cpath d='M16 4v15' stroke='%23e6e3dc' stroke-width='1.6'/%3E%3Cpath d='M16 19l-4.5 3.5L16 28l4.5-5.5z' fill='%23c9a45c'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#22272b; --surface:#2b3136; --line:#3d454b; --text:#e6e3dc; --muted:#9aa2a6;
+  --laiton:#c9a45c; --in:#84c6b3; --out:#a79fd9; --alerte:#e2917f; --sur-laiton:#1d1a12;
+  --font:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  color-scheme:dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#ecebe6; --surface:#f7f6f2; --line:#d3d0c7; --text:#23282c; --muted:#5b6468;
+    --laiton:#8a6a24; --in:#3b8c78; --out:#675eae; --alerte:#ad4a37; --sur-laiton:#ffffff; color-scheme:light; }
+}
+*,*::before,*::after{box-sizing:inherit}
+html{background:var(--bg)}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.5;-webkit-font-smoothing:antialiased}
+.app{max-width:34rem;margin:0 auto;padding:1rem 1.25rem 2.5rem}
+a{color:var(--laiton)}
+h1,h2,h3{font-weight:600;line-height:1.2;margin:0}
+h2{font-size:1.45rem;letter-spacing:-.01em}
+h3{font-size:1.05rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.petit{font-size:.88rem}
+
+/* en-tête */
+header{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.75rem}
+.marque{display:flex;align-items:center;gap:.6rem;background:none;border:0;padding:.2rem 0;color:var(--text);font:inherit;font-weight:650;letter-spacing:.14em;cursor:pointer}
+.marque:disabled{cursor:default;opacity:1}
+.marque svg{width:1.1rem;height:1.9rem}
+.arret{border:1.5px solid var(--alerte);color:var(--alerte);background:transparent;border-radius:999px;padding:.4rem .9rem;font:inherit;font-size:.9rem;cursor:pointer}
+
+/* boutons */
+button{font:inherit;cursor:pointer}
+.bouton{border:1.5px solid var(--line);background:transparent;color:var(--text);border-radius:999px;padding:.7rem 1.3rem}
+.bouton.primaire{background:var(--laiton);border-color:var(--laiton);color:var(--sur-laiton);font-weight:650;padding:.8rem 1.6rem}
+.bouton.gene{border-color:var(--alerte);color:var(--alerte)}
+.bouton:disabled{opacity:.4;cursor:default}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--laiton);outline-offset:3px}
+.actions{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.5rem}
+
+/* accueil */
+.bloc-jour{border-left:2px solid var(--laiton);padding:.2rem 0 .2rem 1.1rem;display:grid;gap:.7rem}
+.bloc-jour .bouton{justify-self:start;margin-top:.4rem}
+.aujourdhui{margin-top:2rem;display:grid;gap:.35rem}
+nav{display:flex;gap:1.4rem;margin-top:2.2rem;padding-top:1.1rem;border-top:1px solid var(--line)}
+nav button{background:none;border:0;color:var(--text);padding:.3rem 0;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:.3em}
+footer{margin-top:2.5rem;color:var(--muted);font-size:.8rem}
+
+/* porte d'exercice */
+.rang{color:var(--muted);font-size:.9rem;margin-bottom:.4rem;font-variant-numeric:tabular-nums}
+.lieu{color:var(--muted);margin-top:.35rem}
+.dosage{margin-top:1rem;font-weight:600}
+.consignes{margin:1rem 0 0;padding-left:1.1rem;display:grid;gap:.45rem}
+.note{margin-top:1rem;padding:.8rem 1rem;background:var(--surface);border-radius:10px;font-size:.93rem}
+.note.alerte{color:var(--alerte)}
+.video{display:inline-block;margin-top:1rem}
+
+/* séance */
+.scene{display:grid;grid-template-columns:1.6rem 1fr;gap:1rem;min-height:24rem;margin-top:.5rem}
+.fil{position:relative;display:flex;justify-content:center}
+.fil::before{content:"";position:absolute;top:0;bottom:0;width:1.5px;background:var(--line)}
+.plomb{position:absolute;left:50%;width:1rem;height:1.5rem;margin-left:-.5rem;transform:translateY(-50%);top:0;transition:top .25s linear}
+.plomb svg{display:block;width:100%;height:100%}
+.centre{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:.5rem}
+.s-titre{color:var(--muted);font-size:.95rem}
+#orb{width:min(62vw,13.5rem);height:auto;overflow:visible}
+#orb .disc,#orb .halo{fill:var(--in);transition:fill .9s ease}
+#orb .halo{opacity:.14}
+#orb.exh .disc,#orb.exh .halo{fill:var(--out)}
+#orb text{fill:var(--bg);font-size:21px;font-weight:600;font-family:var(--font)}
+.mot{font-size:clamp(2rem,9vw,2.8rem);font-weight:600;letter-spacing:-.01em;min-height:1.2em}
+.mot.tenue{color:var(--laiton)}
+.grand{font-size:clamp(3.6rem,19vw,5.5rem);font-weight:250;line-height:1;font-variant-numeric:tabular-nums;min-height:1em}
+.detail{color:var(--muted);font-size:1.05rem;font-variant-numeric:tabular-nums;min-height:1.5em}
+.en-pause .centre{opacity:.45}
+
+/* fin */
+fieldset{border:0;padding:0;margin:1.4rem 0 0;display:grid;gap:.5rem}
+legend{font-weight:600;padding:0;margin-bottom:.3rem}
+.choix{display:flex;gap:.5rem}
+.choix button{border:1.5px solid var(--line);background:transparent;color:var(--text);border-radius:999px;padding:.5rem 1.3rem}
+.choix button[aria-pressed="true"]{background:var(--text);color:var(--bg);border-color:var(--text)}
+.proposition{margin-top:1rem;padding:1rem;border:1.5px solid var(--laiton);border-radius:10px;display:grid;gap:.8rem}
+
+/* listes */
+.liste{list-style:none;margin:1rem 0 0;padding:0;display:grid;gap:.9rem}
+.liste li{display:grid;gap:.1rem}
+.groupe{margin-top:1.6rem}
+.reglage{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:1rem}
+.reglage input[type=number]{width:5.5rem;font:inherit;padding:.4rem .6rem;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--text);text-align:center}
+.reglage input[type=range]{width:10rem;accent-color:var(--laiton)}
+.puces{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.6rem}
+.puces button{border:1.5px solid var(--line);background:transparent;color:var(--text);border-radius:999px;padding:.35rem .85rem;font-size:.92rem}
+.puces button[aria-pressed="true"]{background:var(--text);color:var(--bg);border-color:var(--text)}
+
+dialog{border:0;border-radius:14px;background:var(--surface);color:var(--text);padding:1.4rem;max-width:30rem;width:calc(100% - 2rem)}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+dialog h2{color:var(--alerte)}
+dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
+[hidden]{display:none !important}
+@media (prefers-reduced-motion: reduce){ .plomb,#orb .disc,#orb .halo{transition:none} }
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <button class="marque" id="marque" aria-label="Accueil">
+      <svg viewBox="0 0 18 30" aria-hidden="true"><path d="M9 0v17" stroke="currentColor" stroke-width="1.4"/><path d="M9 17l-5 4 5 7 5-7z" fill="var(--laiton)"/></svg>
+      APLOMB
+    </button>
+    <button class="arret" id="ouvrirArret">Signaux d'arrêt</button>
+  </header>
+
+  <!-- accueil -->
+  <section id="accueil">
+    <p class="muted" id="dateJour"></p>
+    <div class="bloc-jour" style="margin-top:1rem">
+      <h2>Bloc nuque</h2>
+      <p id="descEtape"></p>
+      <p class="muted petit" id="series"></p>
+      <p id="blocFait" hidden></p>
+      <button class="bouton primaire" id="lancer">Commencer le bloc</button>
+      <p class="muted petit">Le soir, après PALIER ou un jour sans séance, jamais juste avant.</p>
+    </div>
+    <div class="aujourdhui">
+      <h3>Aujourd'hui</h3>
+      <p id="resumeJour"></p>
+      <p class="muted petit">Cohérences seules : <a href="https://cc.s1t3.link" target="_blank" rel="noopener">cc.s1t3.link</a> en attendant la prochaine version. Elles ne sont pas comptées ici.</p>
+    </div>
+    <nav>
+      <button data-aller="videos">Vidéos</button>
+      <button data-aller="journal">Journal</button>
+      <button data-aller="reglages">Réglages</button>
+    </nav>
+    <footer id="version"></footer>
+  </section>
+
+  <!-- bloc : porte d'exercice -->
+  <section id="porte" hidden>
+    <p class="rang" id="pRang"></p>
+    <h2 id="pTitre"></h2>
+    <p class="lieu" id="pLieu"></p>
+    <p class="dosage" id="pDosage"></p>
+    <ul class="consignes" id="pConsignes"></ul>
+    <p class="note" id="pRespi" hidden></p>
+    <p class="note alerte" id="pGene" hidden>Gêne notée : le renforcement est sauté, le bloc se termine par les étirements.</p>
+    <p class="muted petit" id="pSon" style="margin-top:1rem"></p>
+    <a class="video" id="pVideo" target="_blank" rel="noopener"></a>
+    <div class="actions">
+      <button class="bouton primaire" id="pret">Prêt</button>
+      <button class="bouton gene" id="pGeneBtn">Gêne aujourd'hui</button>
+      <button class="bouton" id="pStop">Arrêter le bloc</button>
+    </div>
+  </section>
+
+  <!-- bloc : séance minutée -->
+  <section id="seance" hidden>
+    <div class="scene" id="scene">
+      <div class="fil" aria-hidden="true"><span class="plomb" id="plomb"><svg viewBox="0 0 10 15"><path d="M5 0L0 4l5 11 5-11z" fill="var(--laiton)"/></svg></span></div>
+      <div class="centre">
+        <p class="s-titre" id="sTitre"></p>
+        <svg id="orb" viewBox="0 0 300 300" aria-hidden="true" hidden>
+          <circle class="halo" id="halo" cx="150" cy="150" r="74"/>
+          <circle class="disc" id="disc" cx="150" cy="150" r="62"/>
+          <text id="phase" x="150" y="157" text-anchor="middle"></text>
+        </svg>
+        <p class="mot" id="sMot"></p>
+        <p class="grand" id="sGrand"></p>
+        <p class="detail" id="sDetail"></p>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="bouton" id="sPause">Pause</button>
+      <button class="bouton gene" id="sGene">Gêne aujourd'hui</button>
+      <button class="bouton" id="sStop">Arrêter le bloc</button>
+    </div>
+  </section>
+
+  <!-- bloc : fin -->
+  <section id="fin" hidden>
+    <h2>Bloc terminé</h2>
+    <div id="fDecl">
+      <fieldset>
+        <legend>Tenues propres ?</legend>
+        <p class="muted petit">SCOM resté relâché sous les doigts pendant toutes les tenues.</p>
+        <div class="choix" data-q="tenues"><button data-v="1">Oui</button><button data-v="0">Non</button></div>
+      </fieldset>
+      <fieldset>
+        <legend>Y propres ?</legend>
+        <p class="muted petit">Le mouvement part des omoplates, les épaules ne montent pas, le buste ne décolle pas.</p>
+        <div class="choix" data-q="y"><button data-v="1">Oui</button><button data-v="0">Non</button></div>
+      </fieldset>
+      <div class="actions">
+        <button class="bouton primaire" id="fEnregistrer" disabled>Enregistrer</button>
+        <button class="bouton gene" id="fGene">Gêne aujourd'hui</button>
+      </div>
+    </div>
+    <div id="fResultat" hidden>
+      <p id="fMessage" style="margin-top:1rem"></p>
+      <div id="fProps"></div>
+      <div class="actions"><button class="bouton" id="fAccueil">Retour à l'accueil</button></div>
+    </div>
+  </section>
+
+  <!-- vidéos -->
+  <section id="videos" hidden>
+    <h2>Vidéos</h2>
+    <p class="muted petit" style="margin-top:.5rem">Liens externes, ouverts dans un nouvel onglet. À vérifier : la vidéo se lance sans l'appli, le geste correspond à la consigne.</p>
+    <div id="listeVideos"></div>
+    <div class="actions"><button class="bouton" data-aller="accueil">Retour</button></div>
+  </section>
+
+  <!-- journal -->
+  <section id="journal" hidden>
+    <h2>Journal</h2>
+    <p id="jEtat" style="margin-top:.8rem"></p>
+    <p class="muted petit" id="jSeries"></p>
+    <ul class="liste" id="jJours"></ul>
+    <div class="groupe">
+      <h3>Données de cet appareil</h3>
+      <p class="muted petit" style="margin-top:.3rem">Chaque appareil garde son propre historique. L'export sert de sauvegarde et de transfert.</p>
+      <div class="actions">
+        <button class="bouton" id="exporter">Exporter</button>
+        <button class="bouton" id="importer">Importer</button>
+        <input type="file" id="fichier" accept="application/json,.json" hidden>
+      </div>
+      <p class="petit" id="jMessage" style="margin-top:.8rem"></p>
+    </div>
+    <div class="actions"><button class="bouton" data-aller="accueil">Retour</button></div>
+  </section>
+
+  <!-- réglages -->
+  <section id="reglages" hidden>
+    <h2>Réglages</h2>
+    <div class="groupe">
+      <h3>Rythme</h3>
+      <div class="reglage"><label for="rTempo">Tempo (bips par minute)</label><input type="number" id="rTempo" min="40" max="80" step="1"></div>
+      <p class="muted petit" id="rTempoInfo" style="margin-top:.4rem"></p>
+    </div>
+    <div class="groupe">
+      <h3>Objectif de cohérence</h3>
+      <div class="puces" id="rObjectif"></div>
+      <p class="muted petit" style="margin-top:.4rem">Une cohérence compte quand elle atteint l'objectif. Dans le bloc, la séance dure au moins le temps des tenues.</p>
+    </div>
+    <div class="groupe">
+      <h3>Son</h3>
+      <div class="puces" id="rSons"></div>
+      <div class="reglage"><label for="rHauteur">Hauteur <span id="rHauteurVal"></span></label><input type="range" id="rHauteur" min="-12" max="12" step="1"></div>
+      <div class="reglage"><label for="rVolume">Volume</label><input type="range" id="rVolume" min="0" max="1" step="0.05"></div>
+      <div class="actions"><button class="bouton" id="rEcouter">Écouter les signaux</button></div>
+      <p class="muted petit" style="margin-top:.5rem">Bips aigu, médium, grave ; puis tenue (deux notes qui montent), relâche (deux notes qui descendent), changement de côté (trois notes), fin.</p>
+    </div>
+    <div class="actions"><button class="bouton" data-aller="accueil">Retour</button></div>
+  </section>
+
+  <dialog id="arret">
+    <h2>Signaux d'arrêt</h2>
+    <p style="margin-top:.8rem">Arrête l'exercice et consulte en cas de :</p>
+    <ul>
+      <li>vertiges ;</li>
+      <li>fourmillements ou engourdissement dans les bras ;</li>
+      <li>douleur vive ;</li>
+      <li>maux de tête inhabituels ;</li>
+      <li>douleur qui réveille la nuit.</li>
+    </ul>
+    <p class="muted petit">Cette app ne remplace pas un avis médical. Le bilan kiné prime.</p>
+    <div class="actions">
+      <button class="bouton gene" id="arretStop" hidden>Arrêter le bloc</button>
+      <button class="bouton" id="arretFermer">Fermer</button>
+    </div>
+  </dialog>
+</main>
+
+<script src="logique.js?v=0.1.0"></script>
+<script>
+(() => {
+  "use strict";
+  const A = window.Aplomb;
+  const $ = s => document.querySelector(s);
+  const CLE = "aplomb:etat";
+
+  // ---------- stockage ----------
+  function lire(){
+    let brut = null;
+    try { brut = localStorage.getItem(CLE); } catch {}
+    if (!brut) return A.etatInitial();
+    try { return A.migrer(JSON.parse(brut)); }
+    catch { try { localStorage.setItem(CLE + ":illisible", brut); } catch {} return A.etatInitial(); }
+  }
+  function ecrire(){ try { localStorage.setItem(CLE, JSON.stringify(E)); } catch {} }
+  let E = lire();
+
+  // ---------- utilitaires ----------
+  const fmt = s => { s = Math.max(0, Math.floor(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+  const bd = () => 60 / E.reglages.tempo;
+  const aujourdhui = () => A.dateLocale(new Date());
+  const ecrans = ["accueil", "porte", "seance", "fin", "videos", "journal", "reglages"];
+  function montrer(id){
+    ecrans.forEach(e => { $("#" + e).hidden = e !== id; });
+    $("#marque").disabled = ["porte", "seance", "fin"].includes(id);
+    if (id === "accueil") rendreAccueil();
+    if (id === "journal") rendreJournal();
+    if (id === "reglages") rendreReglages();
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- audio (repris de cc) ----------
+  const FREQ = { hi: 1046.5, mid: 783.99, lo: 523.25 };
+  let ctx = null, master = null, bruit = null;
+  function nouveauCtx(){
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    nouveauMaster(); bruit = null;
+  }
+  function nouveauMaster(){
+    if (master) try { master.disconnect(); } catch {}
+    master = ctx.createGain(); master.gain.value = E.reglages.volume * E.reglages.volume; master.connect(ctx.destination);
+  }
+  function fermerCtx(){ if (ctx) try { ctx.close(); } catch {} ctx = null; master = null; }
+  function env(t, dur, peak, att){
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + att);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    g.connect(master); return g;
+  }
+  function tone(t, f, dur, peak, type = "triangle", att = 0.006){
+    const o = ctx.createOscillator(); o.type = type; o.frequency.value = f;
+    o.connect(env(t, dur, peak, att)); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function sweep(t, f1, f2, sd, dur, peak){
+    const o = ctx.createOscillator(); o.type = "sine";
+    o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + sd);
+    o.connect(env(t, dur, peak, 0.003)); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function noise(t, dur, peak, fc, q){
+    if (!bruit){ bruit = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = bruit.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+    const src = ctx.createBufferSource(), bp = ctx.createBiquadFilter();
+    src.buffer = bruit; bp.type = "bandpass"; bp.frequency.value = fc; bp.Q.value = q;
+    src.connect(bp).connect(env(t, dur, peak, 0.001)); src.start(t); src.stop(t + dur + 0.02);
+  }
+  const SONS = {
+    bip:     { label: "Bip", oct: 1, play: (t, f, k) => tone(t, f, k === "lo" ? 0.26 : k === "hi" ? 0.18 : 0.12, k === "lo" ? 0.9 : k === "hi" ? 0.75 : 0.6) },
+    doux:    { label: "Doux", oct: 1, play: (t, f, k) => tone(t, f, k === "lo" ? 0.5 : 0.35, 0.65, "sine", 0.035) },
+    bol:     { label: "Bol chantant", oct: 0.5, play: (t, f, k) => { const d = k === "lo" ? 1.05 : 0.85; [[1, 1, 1], [2.71, 0.35, 0.6], [5.15, 0.12, 0.3]].forEach(([r, a, dd]) => tone(t, f * r, d * dd, 0.75 * a, "sine", 0.004)); } },
+    marimba: { label: "Marimba", oct: 0.5, play: (t, f) => { tone(t, f, 0.5, 0.9, "sine", 0.003); tone(t, f * 4, 0.09, 0.25, "sine", 0.002); tone(t, f * 10, 0.02, 0.07, "sine", 0.001); } },
+    goutte:  { label: "Goutte", oct: 1, play: (t, f) => sweep(t, f * 0.55, f * 1.25, 0.05, 0.18, 0.8) },
+    bois:    { label: "Bois", oct: 1, play: (t, f) => { noise(t, 0.05, 0.9, f * 2.2, 9); sweep(t, f * 1.1, f * 0.9, 0.03, 0.07, 0.5); } }
+  };
+  const tr = () => Math.pow(2, E.reglages.hauteur / 12);
+  function jouer(t, son){
+    const x = tr();
+    if (son === "hi" || son === "mid" || son === "lo"){ const s = SONS[E.reglages.son] || SONS.bip; s.play(t, FREQ[son] * s.oct * x, son); return; }
+    if (son === "tenue"){ tone(t, 783.99 * x, 0.16, 0.6, "sine"); tone(t + 0.13, 1046.5 * x, 0.35, 0.7, "sine"); return; }
+    if (son === "relache"){ tone(t, 1046.5 * x, 0.16, 0.6, "sine"); tone(t + 0.13, 783.99 * x, 0.4, 0.7, "sine"); return; }
+    if (son === "cote"){ [523.25, 659.25, 783.99].forEach((f, i) => tone(t + i * 0.12, f * x, 0.3, 0.55, "sine")); return; }
+    if (son === "tic"){ tone(t, 1567.98 * x, 0.05, 0.35, "sine", 0.002); return; }
+    if (son === "fin"){ [1046.5, 1318.5, 1568].forEach((f, i) => { tone(t + i * 0.11, f * x, 1.3, 0.55, "sine"); tone(t + i * 0.11, f * 2 * x, 0.5, 0.12, "sine"); }); }
+  }
+
+  // ---------- écran allumé ----------
+  let wake = null, garderEcran = false;
+  async function verrouEcran(){ try { if (garderEcran && "wakeLock" in navigator && !document.hidden && !wake){ wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => { wake = null; }); } } catch {} }
+  function libererEcran(){ garderEcran = false; try { wake && wake.release(); } catch {} wake = null; }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) verrouEcran(); });
+
+  // ---------- bloc ----------
+  const B = { plan: [], i: 0, gene: false, tl: null, T0: 0, idx: 0, pi: 0, timer: 0, raf: 0, pause: false, debut: null, cohNotee: false, actif: false };
+
+  function lancerBloc(){
+    B.plan = A.planBloc(E, bd()); B.i = 0; B.gene = false; B.actif = true;
+    montrerPorte();
+  }
+  function seg(){ return B.plan[B.i]; }
+  function suivantIndex(i){ while (i < B.plan.length && B.gene && B.plan[i].renfo) i++; return i; }
+
+  function montrerPorte(){
+    const s = seg(), c = A.CONTENU[s.exo];
+    $("#pRang").textContent = `Exercice ${B.i + 1} sur ${B.plan.length}`;
+    $("#pTitre").textContent = c.titre;
+    $("#pLieu").textContent = c.lieu;
+    $("#pDosage").textContent = A.dosage(s);
+    const ul = $("#pConsignes"); ul.innerHTML = "";
+    c.consignes.forEach(t => { const li = document.createElement("li"); li.textContent = t; ul.appendChild(li); });
+    $("#pRespi").hidden = s.type !== "couplee";
+    $("#pRespi").textContent = "Avant les tenues, respiration abdominale. " + A.RESPIRATION;
+    $("#pGene").hidden = !B.gene;
+    $("#pGeneBtn").hidden = B.gene;
+    $("#pSon").textContent = s.type === "couplee"
+      ? "Au son : les bips suivent la respiration, comme dans cc. Deux notes qui montent : tenue. Deux notes qui descendent : relâche."
+      : s.type === "reps"
+        ? "Au son : aigu, monte ; deux médiums, tiens ; grave, descends ; puis pose. Trois tics avant chaque série."
+        : `Au son : deux notes qui montent, tiens ; deux notes qui descendent, relâche ; trois notes, ${s.exo === "iso" ? "change de direction" : "change de côté"}.`;
+    const v = $("#pVideo"); v.href = c.video; v.textContent = c.videoLibelle ? `${c.videoLibelle} (nouvel onglet)` : "Voir la vidéo (nouvel onglet)";
+    montrer("porte");
+  }
+
+  function pret(){
+    if (!ctx) nouveauCtx();
+    else { nouveauMaster(); if (ctx.state === "suspended") ctx.resume(); }
+    const s = seg();
+    B.tl = A.timeline(s, bd());
+    B.T0 = ctx.currentTime + 0.15; B.idx = 0; B.pi = 0; B.pause = false; B.cohNotee = false; B.debut = new Date();
+    $("#sTitre").textContent = A.CONTENU[s.exo].titre;
+    $("#orb").toggleAttribute("hidden", s.type !== "couplee");
+    $("#scene").classList.remove("en-pause"); $("#sPause").textContent = "Pause";
+    $("#sGene").hidden = B.gene;
+    garderEcran = true; verrouEcran();
+    montrer("seance");
+    clearInterval(B.timer); B.timer = setInterval(planifier, 25); planifier();
+    cancelAnimationFrame(B.raf); B.raf = requestAnimationFrame(image);
+  }
+  function planifier(){
+    if (!ctx || !B.tl) return;
+    const ahead = document.hidden ? 2.5 : 0.15, ev = B.tl.evenements;
+    while (B.idx < ev.length && B.T0 + ev[B.idx].t < ctx.currentTime + ahead){
+      const e = ev[B.idx], t = Math.max(B.T0 + e.t, ctx.currentTime);
+      jouer(t, e.alt && !B.gene ? e.alt : e.son);
+      B.idx++;
+    }
+  }
+  function arreterMinuterie(){ clearInterval(B.timer); cancelAnimationFrame(B.raf); B.timer = 0; B.raf = 0; }
+
+  function noterCoherence(secondes){
+    if (B.cohNotee || seg().type !== "couplee" || secondes < 1) return;
+    B.cohNotee = true;
+    E = A.ajouterCoherence(E, { date: A.dateLocale(B.debut), h: A.heureLocale(B.debut), s: secondes });
+    ecrire();
+  }
+  function secondesCoherence(){
+    const c = B.tl && B.tl.coherence; if (!c || !ctx) return 0;
+    return Math.min(c.fin, ctx.currentTime - B.T0) - c.t0;
+  }
+  function finSegment(){
+    arreterMinuterie();
+    if (seg().type === "couplee") noterCoherence(B.tl.coherence.fin - B.tl.coherence.t0);
+    B.tl = null;
+    B.i = suivantIndex(B.i + 1);
+    if (B.i >= B.plan.length) finBloc(); else montrerPorte();
+  }
+
+  function image(){
+    B.raf = requestAnimationFrame(image);
+    if (!ctx || !B.tl) return;
+    if (ctx.currentTime >= B.T0 + B.tl.duree){ finSegment(); return; }
+    const lat = ctx.outputLatency || ctx.baseLatency || 0;
+    rendreSeance(Math.max(0, ctx.currentTime - lat - B.T0));
+  }
+  const R_MIN = 58, R_MAX = 112;
+  const ease = p => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, p)))) / 2;
+  function rendreSeance(now){
+    const tl = B.tl, s = seg(), pl = tl.plages;
+    while (B.pi < pl.length - 1 && now >= pl[B.pi].t1) B.pi++;
+    const p = now < pl[B.pi].t1 ? pl[B.pi] : null;
+    $("#plomb").style.top = `${Math.min(100, 100 * now / tl.duree)}%`;
+    let mot = "", grand = "", detail = "", tenue = false;
+    if (!p) { mot = "Terminé"; }
+    else if (p.type === "prep"){ mot = "En place"; grand = String(Math.ceil(p.t1 - now)); detail = A.CONTENU[s.exo].lieu; }
+    else if (s.type === "couplee"){
+      const coh = Math.max(0, now - tl.coherence.t0);
+      if (p.type === "libre" || B.gene){ mot = "Cohérence libre"; grand = fmt(coh); }
+      else { tenue = p.type === "tenue"; mot = tenue ? "Tenue" : "Relâche"; grand = `${p.r} / ${p.n}`; }
+      detail = `${fmt(coh)} sur ${fmt(tl.coherence.objectif)}`;
+    }
+    else if (p.type === "rep"){ mot = p.mot; tenue = p.mot === "Tiens"; grand = `${p.r} / ${p.n}`; detail = `Série ${p.serie} sur ${p.series}`; }
+    else if (p.type === "repos"){ mot = "Repos"; grand = String(Math.ceil(p.t1 - now)); detail = `Ensuite : série ${p.serie} sur ${p.series}`; }
+    else if (p.type === "tenue"){ mot = "Tiens"; tenue = true; grand = String(Math.ceil(p.t1 - now)); detail = `${p.label}, ${p.r} sur ${p.n}`; }
+    else if (p.type === "relache"){ mot = "Relâche"; grand = String(Math.ceil(p.t1 - now)); detail = p.label; }
+    else if (p.type === "transition"){ mot = s.exo === "iso" ? "Change de direction" : "Change de côté"; grand = String(Math.ceil(p.t1 - now)); detail = `Ensuite : ${p.label}`; }
+    const m = $("#sMot"); if (m.textContent !== mot) m.textContent = mot; m.classList.toggle("tenue", tenue);
+    if ($("#sGrand").textContent !== grand) $("#sGrand").textContent = grand;
+    if ($("#sDetail").textContent !== detail) $("#sDetail").textContent = detail;
+    if (s.type === "couplee") rendreRespiration(now);
+  }
+  function rendreRespiration(now){
+    const r = B.tl.respi, disc = $("#disc"), halo = $("#halo"), orb = $("#orb");
+    const t = now - r.t0;
+    if (t < 0 || now >= B.tl.coherence.fin){ disc.setAttribute("r", R_MIN); halo.setAttribute("r", R_MIN + 12); orb.classList.remove("exh"); $("#phase").textContent = ""; return; }
+    const pos = (t / r.bd) % r.L, inh = pos < r.inh;
+    const pr = inh ? pos / r.inh : (pos - r.inh) / (r.L - r.inh);
+    const rad = inh ? R_MIN + (R_MAX - R_MIN) * ease(pr) : R_MAX - (R_MAX - R_MIN) * ease(pr);
+    disc.setAttribute("r", rad.toFixed(2)); halo.setAttribute("r", (rad + 12).toFixed(2));
+    orb.classList.toggle("exh", !inh);
+    const txt = inh ? "Inspire" : "Expire";
+    if ($("#phase").textContent !== txt) $("#phase").textContent = txt;
+  }
+
+  function basculerPause(){
+    if (!ctx || $("#seance").hidden) return;
+    if (B.pause){ ctx.resume(); B.pause = false; verrouEcran(); }
+    else { ctx.suspend(); B.pause = true; }
+    $("#sPause").textContent = B.pause ? "Reprendre" : "Pause";
+    $("#scene").classList.toggle("en-pause", B.pause);
+  }
+  function noterGene(){
+    if (B.gene) return;
+    B.gene = true;
+    if (!$("#seance").hidden){
+      $("#sGene").hidden = true;
+      if (seg().renfo){ arreterMinuterie(); nouveauMaster(); B.tl = null; B.i = suivantIndex(B.i); if (B.i >= B.plan.length) finBloc(); else montrerPorte(); }
+    } else if (!$("#porte").hidden){
+      B.i = suivantIndex(B.i);
+      if (B.i >= B.plan.length) finBloc(); else montrerPorte();
+    }
+  }
+  function arreterBloc(){
+    if (!confirm("Arrêter le bloc ? Il ne sera pas enregistré.")) return false;
+    if (B.tl && seg().type === "couplee") noterCoherence(secondesCoherence());
+    arreterMinuterie(); B.tl = null; B.actif = false;
+    fermerCtx(); libererEcran();
+    montrer("accueil");
+    return true;
+  }
+
+  // ---------- fin du bloc ----------
+  const decl = { tenues: null, y: null };
+  function finBloc(){
+    arreterMinuterie(); fermerCtx(); libererEcran(); B.actif = false;
+    decl.tenues = null; decl.y = null;
+    document.querySelectorAll(".choix button").forEach(b => b.setAttribute("aria-pressed", "false"));
+    $("#fEnregistrer").disabled = true;
+    $("#fDecl").hidden = B.gene; $("#fResultat").hidden = true;
+    montrer("fin");
+    if (B.gene) enregistrer(true);
+  }
+  function enregistrer(gene){
+    const d = new Date();
+    const r = A.finirBloc(E, { date: A.dateLocale(d), h: A.heureLocale(d), gene, tenuesPropres: decl.tenues, yPropres: decl.y });
+    E = r.etat; ecrire();
+    $("#fDecl").hidden = true; $("#fResultat").hidden = false;
+    let msg;
+    if (!r.compte) msg = "Un bloc est déjà enregistré aujourd'hui : celui-ci ne compte pas pour la progression.";
+    else if (gene) msg = `Gêne notée. Le prochain bloc repart au début de l'étape ${E.etape}. Si un signal d'arrêt apparaît, consulte.`;
+    else msg = `Enregistré. Blocs propres de suite : tenues ${E.serie.tenues}, Y ${E.serie.y}.`;
+    $("#fMessage").textContent = msg;
+    rendrePropositions(r.compte && !gene);
+  }
+  function rendrePropositions(actif){
+    const box = $("#fProps"); box.innerHTML = "";
+    if (!actif) return;
+    A.propositions(E).forEach(p => {
+      const d = document.createElement("div"); d.className = "proposition";
+      const t = document.createElement("p"); t.textContent = p.texte;
+      const a = document.createElement("div"); a.className = "actions"; a.style.marginTop = "0";
+      const ok = document.createElement("button"); ok.className = "bouton primaire"; ok.textContent = "Accepter";
+      const non = document.createElement("button"); non.className = "bouton"; non.textContent = "Plus tard";
+      ok.addEventListener("click", () => { E = A.accepter(E, p.id); ecrire(); rendrePropositions(true); $("#fMessage").textContent = "Palier accepté. " + A.descriptionEtape(E); });
+      non.addEventListener("click", () => d.remove());
+      a.append(ok, non); d.append(t, a); box.appendChild(d);
+    });
+  }
+  document.querySelectorAll(".choix").forEach(g => g.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    decl[g.dataset.q] = b.dataset.v === "1";
+    g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    $("#fEnregistrer").disabled = decl.tenues === null || decl.y === null;
+  })));
+  $("#fEnregistrer").addEventListener("click", () => enregistrer(false));
+  $("#fGene").addEventListener("click", () => { B.gene = true; enregistrer(true); });
+  $("#fAccueil").addEventListener("click", () => montrer("accueil"));
+
+  // ---------- accueil ----------
+  function rendreAccueil(){
+    const d = new Date(), date = A.dateLocale(d), r = A.resumeJour(E, date);
+    $("#dateJour").textContent = d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+    $("#descEtape").textContent = A.descriptionEtape(E);
+    $("#series").textContent = `Blocs propres de suite : tenues ${E.serie.tenues} sur 3, Y ${E.serie.y} sur 3.`;
+    $("#blocFait").hidden = !r.bloc;
+    if (r.bloc) $("#blocFait").textContent = r.bloc.gene ? `Bloc fait à ${r.bloc.h}, avec gêne.` : `Bloc fait à ${r.bloc.h}.`;
+    $("#lancer").textContent = r.bloc ? "Refaire un bloc (ne compte pas)" : "Commencer le bloc";
+    $("#lancer").classList.toggle("primaire", !r.bloc);
+    $("#resumeJour").textContent = `${r.bloc ? "Bloc fait" : "Bloc à faire"}. Cohérences à l'objectif : ${r.coherences}.`;
+    $("#version").textContent = `Version ${A.VERSION}`;
+  }
+
+  // ---------- vidéos ----------
+  (function rendreVideos(){
+    const groupes = [
+      ["Étape 1", ["ccf", "y1", "elev", "sousocc"]],
+      ["Étape 2", ["tete", "y2"]],
+      ["Étape 3", ["iso"]],
+      ["Micro-pause", ["micro"]]
+    ];
+    const box = $("#listeVideos");
+    groupes.forEach(([titre, ids]) => {
+      const g = document.createElement("div"); g.className = "groupe";
+      const h = document.createElement("h3"); h.textContent = titre;
+      const ul = document.createElement("ul"); ul.className = "liste";
+      ids.forEach(id => {
+        const c = A.CONTENU[id], li = document.createElement("li"), a = document.createElement("a");
+        a.href = c.video; a.target = "_blank"; a.rel = "noopener"; a.textContent = c.titre;
+        const s = document.createElement("span"); s.className = "muted petit"; s.textContent = c.videoLibelle || "Vidéo Physitrack";
+        li.append(a, s); ul.appendChild(li);
+      });
+      g.append(h, ul); box.appendChild(g);
+    });
+  })();
+
+  // ---------- journal ----------
+  function rendreJournal(){
+    $("#jEtat").textContent = A.descriptionEtape(E);
+    $("#jSeries").textContent = `Blocs propres de suite : tenues ${E.serie.tenues}, Y ${E.serie.y}.`;
+    const ul = $("#jJours"); ul.innerHTML = "";
+    const dates = Object.keys(E.jours).sort().reverse().slice(0, 90);
+    if (!dates.length){ const li = document.createElement("li"); li.className = "muted"; li.textContent = "Rien d'enregistré sur cet appareil pour l'instant."; ul.appendChild(li); }
+    dates.forEach(k => {
+      const j = E.jours[k], [y, m, d] = k.split("-").map(Number);
+      const li = document.createElement("li");
+      const t = document.createElement("strong"); t.textContent = new Date(y, m - 1, d).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+      const parts = [];
+      if (j.bloc) parts.push(j.bloc.gene ? `Bloc étape ${j.bloc.etape} à ${j.bloc.h}, gêne.` : `Bloc étape ${j.bloc.etape} à ${j.bloc.h} : tenues ${j.bloc.tenuesPropres ? "propres" : "non propres"}, Y ${j.bloc.yPropres ? "propres" : "non propres"}.`);
+      if (j.coherences && j.coherences.length) parts.push(`Cohérences : ${j.coherences.map(c => `${c.h} (${fmt(c.s)}${c.ok ? "" : ", sous l'objectif"})`).join(", ")}.`);
+      const p = document.createElement("span"); p.className = "muted petit"; p.textContent = parts.join(" ") || "Rien.";
+      li.append(t, p); ul.appendChild(li);
+    });
+    $("#jMessage").textContent = "";
+  }
+  $("#exporter").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(E, null, 2)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `aplomb-${aujourdhui()}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  $("#importer").addEventListener("click", () => $("#fichier").click());
+  $("#fichier").addEventListener("change", async ev => {
+    const f = ev.target.files[0]; ev.target.value = "";
+    if (!f) return;
+    try {
+      const e = A.migrer(JSON.parse(await f.text()));
+      if (!confirm("Remplacer les données de cet appareil par celles du fichier ?")) return;
+      E = e; ecrire(); rendreJournal(); $("#jMessage").textContent = "Import terminé.";
+    } catch (err) { $("#jMessage").textContent = `Import impossible : ${err.message}`; }
+  });
+
+  // ---------- réglages ----------
+  function rendreReglages(){
+    const R = E.reglages;
+    $("#rTempo").value = R.tempo;
+    const cyc = 10 * 60 / R.tempo;
+    $("#rTempoInfo").textContent = `Cycle de ${cyc.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} s, ${(60 / cyc).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} respirations par minute. Dans le bloc, 5 temps d'inspiration et 5 d'expiration.`;
+    document.querySelectorAll("#rObjectif button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.v === R.objectif)));
+    document.querySelectorAll("#rSons button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === R.son)));
+    $("#rHauteur").value = R.hauteur; $("#rVolume").value = R.volume;
+    $("#rHauteurVal").textContent = R.hauteur ? `(${R.hauteur > 0 ? "+" : ""}${R.hauteur})` : "";
+  }
+  [180, 240, 300, 360].forEach(v => {
+    const b = document.createElement("button"); b.dataset.v = v; b.textContent = `${v / 60} min`;
+    b.addEventListener("click", () => { E.reglages.objectif = v; ecrire(); rendreReglages(); });
+    $("#rObjectif").appendChild(b);
+  });
+  Object.entries(SONS).forEach(([id, s]) => {
+    const b = document.createElement("button"); b.dataset.v = id; b.textContent = s.label;
+    b.addEventListener("click", () => { E.reglages.son = id; ecrire(); rendreReglages(); apercu(false); });
+    $("#rSons").appendChild(b);
+  });
+  $("#rTempo").addEventListener("change", e => {
+    const v = Math.round(+e.target.value);
+    E.reglages.tempo = Number.isFinite(v) ? Math.min(80, Math.max(40, v)) : 55; ecrire(); rendreReglages();
+  });
+  $("#rHauteur").addEventListener("input", e => { E.reglages.hauteur = +e.target.value; ecrire(); rendreReglages(); });
+  $("#rHauteur").addEventListener("change", () => apercu(false));
+  $("#rVolume").addEventListener("input", e => { E.reglages.volume = +e.target.value; ecrire(); });
+  $("#rEcouter").addEventListener("click", () => apercu(true));
+  function apercu(complet){
+    if (B.actif) return;
+    fermerCtx(); nouveauCtx();
+    const c = ctx, t = c.currentTime + 0.08, b = bd();
+    jouer(t, "hi"); jouer(t + b, "mid"); jouer(t + 2 * b, "lo");
+    let fin = 2 * b + 1.2;
+    if (complet){
+      [["tenue", 3.4], ["relache", 4.6], ["cote", 5.8], ["fin", 7.2]].forEach(([s, d]) => jouer(t + 2 * b + d - 2.2, s));
+      fin = 2 * b + 7;
+    }
+    setTimeout(() => { try { c.close(); } catch {} if (ctx === c){ ctx = null; master = null; } }, fin * 1000);
+  }
+
+  // ---------- signaux d'arrêt ----------
+  const dlg = $("#arret");
+  $("#ouvrirArret").addEventListener("click", () => {
+    if (!$("#seance").hidden && !B.pause) basculerPause();
+    $("#arretStop").hidden = !B.actif;
+    dlg.showModal();
+  });
+  $("#arretFermer").addEventListener("click", () => dlg.close());
+  $("#arretStop").addEventListener("click", () => { dlg.close(); arreterBloc(); });
+
+  // ---------- liaisons ----------
+  $("#marque").addEventListener("click", () => montrer("accueil"));
+  document.querySelectorAll("[data-aller]").forEach(b => b.addEventListener("click", () => montrer(b.dataset.aller)));
+  $("#lancer").addEventListener("click", lancerBloc);
+  $("#pret").addEventListener("click", pret);
+  $("#pGeneBtn").addEventListener("click", noterGene);
+  $("#sGene").addEventListener("click", noterGene);
+  $("#pStop").addEventListener("click", arreterBloc);
+  $("#sStop").addEventListener("click", () => { const p = B.pause; if (!p) basculerPause(); if (!arreterBloc() && !p) basculerPause(); });
+  $("#sPause").addEventListener("click", basculerPause);
+  document.addEventListener("keydown", e => {
+    if (e.target.matches("input") || dlg.open) return;
+    if (e.code === "Space" && !$("#seance").hidden){ e.preventDefault(); basculerPause(); }
+  });
+  window.addEventListener("beforeunload", e => { if (B.actif){ e.preventDefault(); e.returnValue = ""; } });
+
+  montrer("accueil");
+})();
+</script>
+</body>
+</html>
