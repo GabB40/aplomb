@@ -17,9 +17,9 @@ test("date locale, pas UTC", () => {
 test("plan de l'étape 1", () => {
   const p = A.planBloc(A.etatInitial(), BD);
   assert.deepEqual(p.map(s => s.exo), ["ccf", "y1", "elev", "sousocc"]);
-  assert.equal(p[0].reps, 10); assert.equal(p[0].tenue, "cycle");
+  assert.equal(p[0].holds.length, 10); assert.equal(p[0].holds[0].tenue, 10);
   assert.equal(p[1].reps, 8); assert.equal(p[1].series, 2);
-  assert.ok(p[1].renfo && !p[2].renfo && !p[0].renfo);
+  assert.ok(p[0].renfo && p[1].renfo && !p[2].renfo && !p[3].renfo);
 });
 
 test("plans des étapes 2 et 3", () => {
@@ -39,33 +39,6 @@ test("tout exercice planifié a un contenu et un lien", () => {
       assert.ok(c && c.titre && /^https:\/\//.test(c.video), s.exo);
     }
   }
-});
-
-test("séance couplée de l'étape 1 : alternance puis cohérence libre", () => {
-  const tl = A.timeline({ type: "couplee", reps: 10, tenue: "cycle", objectif: 300 }, BD);
-  const tenues = tl.evenements.filter(e => e.alt === "tenue"), relaches = tl.evenements.filter(e => e.alt === "relache");
-  assert.equal(tenues.length, 10); assert.equal(relaches.length, 10);
-  assert.ok(Math.abs(relaches[0].t - tenues[0].t - 10 * BD) < 1e-9);
-  assert.ok(Math.abs(tenues[1].t - tenues[0].t - 20 * BD) < 1e-9);
-  const fin = tl.evenements.find(e => e.son === "fin").t - A.PREP;
-  assert.equal(Math.round(fin / (10 * BD)), 28);
-  assert.ok(fin >= 300);
-  assert.ok(tl.plages.some(p => p.type === "libre"));
-});
-
-test("séance couplée : les tenues l'emportent sur un objectif court", () => {
-  const tl = A.timeline({ type: "couplee", reps: 10, tenue: "cycle", objectif: 60 }, BD);
-  const fin = tl.evenements.find(e => e.son === "fin").t - A.PREP;
-  assert.equal(Math.round(fin / (10 * BD)), 20);
-  assert.ok(!tl.plages.some(p => p.type === "libre"));
-});
-
-test("tenue d'une phase : relâche au début de l'expiration, grille inchangée", () => {
-  const tl = A.timeline({ type: "couplee", reps: 5, tenue: "phase", objectif: 300 }, BD);
-  const t = tl.evenements.filter(e => e.alt === "tenue"), r = tl.evenements.filter(e => e.alt === "relache");
-  assert.equal(t.length, 5); assert.equal(r.length, 5);
-  assert.ok(Math.abs(r[0].t - t[0].t - 5 * BD) < 1e-9);
-  assert.ok(Math.abs(t[1].t - t[0].t - 20 * BD) < 1e-9);
 });
 
 test("Y : 2 séries, cadence de 5 temps, 30 s de repos", () => {
@@ -302,4 +275,31 @@ test("micro-pause et cohérence ne modifient pas l'état reçu", () => {
   A.ajouterMicro(e, "2026-12-06");
   A.actionDuJour(e, "2026-12-06", "08:00");
   assert.equal(JSON.stringify(e), gel);
+});
+
+test("flexion cranio-cervicale : 10 tenues de 10 s, 10 s de relâchement, sans bips de respiration", () => {
+  const seg = A.planBloc(A.etatInitial(), BD)[0];
+  assert.equal(seg.type, "tenues");
+  const tl = A.timeline(seg, BD);
+  const tenues = tl.plages.filter(p => p.type === "tenue"), relaches = tl.plages.filter(p => p.type === "relache");
+  assert.equal(tenues.length, 10); assert.equal(relaches.length, 9);
+  assert.ok(tenues.every(p => p.t1 - p.t0 === 10) && relaches.every(p => p.t1 - p.t0 === 10));
+  assert.ok(!tl.evenements.some(e => ["hi", "mid", "lo", "cote"].includes(e.son)));
+  assert.equal(A.dosage(seg), "10 tenues de 10 s, 10 s de relâchement entre deux");
+});
+
+test("tête décollée : paliers 5 × 5 s, 5 × 10 s, 10 × 10 s", () => {
+  let e = A.etatInitial(); e.etape = 2;
+  const secondes = et => A.planBloc(et, BD)[0].holds.map(h => h.tenue);
+  assert.deepEqual(secondes(e), [5, 5, 5, 5, 5]);
+  e.prog.tete = { tenue: "cycle", reps: 5 }; assert.deepEqual(secondes(e), [10, 10, 10, 10, 10]);
+  e.prog.tete = { tenue: "cycle", reps: 10 }; assert.equal(secondes(e).length, 10);
+  assert.match(A.descriptionEtape(e), /tête décollée, 10 × 10 s/);
+});
+
+test("écrans « Prêt » : mise en place et un seul point à surveiller pour chaque exercice", () => {
+  for (const [id, c] of Object.entries(A.CONTENU)) {
+    assert.ok(c.enPlace && c.pendant, id);
+    assert.equal((c.pendant.match(/Seul point à surveiller/g) || []).length, 1, id);
+  }
 });

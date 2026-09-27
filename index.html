@@ -74,6 +74,9 @@ footer{margin-top:2.5rem;color:var(--muted);font-size:.8rem}
 .consignes{margin:1rem 0 0;padding-left:1.1rem;display:grid;gap:.45rem}
 .note{margin-top:1rem;padding:.8rem 1rem;background:var(--surface);border-radius:10px;font-size:.93rem}
 .note.alerte{color:var(--alerte)}
+.deroule{margin:1.2rem 0 0;display:grid;gap:.9rem}
+.deroule dt{font-weight:600}
+.deroule dd{margin:.2rem 0 0}
 .video{display:inline-block;margin-top:1rem}
 
 /* séance */
@@ -155,7 +158,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
       <ul>
         <li>Six semaines, puis on juge. Ce qui manque d'abord, c'est l'endurance des muscles profonds du cou et de ceux qui tiennent les omoplates.</li>
         <li>Trois cohérences cardiaques par jour, matin, midi et soir, de 5 minutes par défaut.</li>
-        <li>Un bloc nuque par jour, le soir, d'environ 10 minutes, après PALIER ou un jour sans séance, jamais juste avant. Il compte comme la cohérence du soir.</li>
+        <li>Un bloc nuque par jour, le soir, d'environ 9 minutes, après PALIER ou un jour sans séance, jamais juste avant. La cohérence du soir s'enchaîne ensuite, à part.</li>
         <li>Au bureau, une micro-pause d'environ 45 secondes toutes les 30 à 60 minutes.</li>
         <li>Après 3 blocs propres de suite, l'app propose le palier suivant. En cas de gêne, le bloc suivant redescend.</li>
         <li>La tension ressentie se note hors de l'app à J0, J7, J21 et J42. Ce relevé et ton ressenti jugent le programme, pas le journal.</li>
@@ -173,13 +176,14 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   <section id="porte" hidden>
     <p class="rang" id="pRang"></p>
     <h2 id="pTitre"></h2>
-    <p class="lieu" id="pLieu"></p>
-    <p class="dosage" id="pDosage"></p>
-    <ol class="consignes" id="pConsignes"></ol>
-    <button class="lien" id="pFiche" style="margin-top:1rem">Fiche complète : ce qu'on doit sentir, erreurs à éviter</button>
-    <p class="note" id="pRespi" hidden></p>
+    <dl class="deroule">
+      <div><dt>Déroulé</dt><dd id="pDosage"></dd></div>
+      <div><dt>En place</dt><dd id="pPlace"></dd></div>
+      <div><dt>Pendant</dt><dd id="pPendant"></dd></div>
+      <div><dt>Au son</dt><dd id="pSon"></dd></div>
+    </dl>
     <p class="note alerte" id="pGene" hidden>Gêne notée : le renforcement est sauté, le bloc se termine par les étirements.</p>
-    <p class="muted petit" id="pSon" style="margin-top:1rem"></p>
+    <p style="margin-top:1.2rem"><button class="lien" id="pFiche">Fiche complète : étapes, sensation, erreurs à éviter</button></p>
     <a class="video" id="pVideo" target="_blank" rel="noopener"></a>
     <div class="actions" id="pActions">
       <button class="bouton primaire" id="pret">Prêt</button>
@@ -233,7 +237,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     <div id="fResultat" hidden>
       <p id="fMessage" style="margin-top:1rem"></p>
       <div id="fProps"></div>
-      <div class="actions"><button class="bouton" id="fAccueil">Retour à l'accueil</button></div>
+      <div class="actions"><button class="bouton primaire" id="fCoherence">Enchaîner la cohérence du soir</button><button class="bouton" id="fAccueil">Retour à l'accueil</button></div>
     </div>
   </section>
 
@@ -299,7 +303,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     <div class="groupe">
       <h3>Objectif de cohérence</h3>
       <div class="puces" id="rObjectif"></div>
-      <p class="muted petit" style="margin-top:.4rem">Une cohérence compte quand elle atteint l'objectif. Dans le bloc, la séance dure au moins le temps des tenues.</p>
+      <p class="muted petit" style="margin-top:.4rem">Une cohérence compte quand elle atteint l'objectif.</p>
     </div>
     <div class="groupe">
       <h3>Son</h3>
@@ -330,7 +334,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   </dialog>
 </main>
 
-<script src="logique.js?v=0.2.0"></script>
+<script src="logique.js?v=0.3.0"></script>
 <script>
 (() => {
   "use strict";
@@ -427,7 +431,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
 
   // ---------- séances : bloc, cohérence seule, micro-pause ----------
   const B = { mode: "bloc", plan: [], i: 0, gene: false, tl: null, T0: 0, idx: 0, pi: 0, timer: 0, raf: 0, pause: false, debut: null, cohNotee: false, actif: false };
-  const respire = s => s.type === "couplee" || s.type === "coherence";
+  const respire = s => s.type === "coherence";
   let flash = "";
 
   function lancer(mode){
@@ -444,24 +448,21 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     $("#pRang").hidden = !bloc;
     $("#pRang").textContent = `Exercice ${B.i + 1} sur ${B.plan.length}`;
     $("#pTitre").textContent = c.titre;
-    $("#pLieu").textContent = c.lieu;
-    $("#pDosage").textContent = A.dosage(s);
-    const ul = $("#pConsignes"); ul.innerHTML = "";
-    c.etapes.forEach(t => { const li = document.createElement("li"); li.textContent = t; ul.appendChild(li); });
-    $("#pRespi").hidden = s.type !== "couplee";
-    $("#pRespi").textContent = "Avant les tenues, respiration abdominale. " + A.RESPIRATION;
+    $("#pDosage").textContent = A.dosage(s) + ".";
+    $("#pPlace").textContent = c.enPlace;
+    $("#pPendant").textContent = c.pendant;
     $("#pGene").hidden = !B.gene;
     $("#pGeneBtn").hidden = B.gene || !bloc;
     $("#pStop").textContent = bloc ? "Arrêter le bloc" : "Arrêter";
-    $("#pSon").textContent = s.type === "couplee"
-      ? "Au son : les bips suivent la respiration, comme dans cc. Deux notes qui montent : tenue. Deux notes qui descendent : relâche."
-      : s.type === "coherence"
-      ? "Au son : les bips suivent la respiration, comme dans cc."
+    $("#pSon").textContent = s.type === "coherence"
+      ? "Trois tics, puis un bip par temps : aigu au début de l'inspiration et de l'expiration, grave au dernier temps."
       : s.type === "micro"
-      ? "Au son : trois tics, puis mâchoire au repos. Deux notes qui montent : tiens. Deux notes qui descendent : relâche."
+      ? "Trois tics, puis mâchoire au repos. Deux notes qui montent : tiens. Deux notes qui descendent : relâche."
       : s.type === "reps"
-        ? "Au son : aigu, monte ; deux médiums, tiens ; grave, descends ; puis pose. Trois tics avant chaque série."
-        : `Au son : deux notes qui montent, tiens ; deux notes qui descendent, relâche ; trois notes, ${s.exo === "iso" ? "change de direction" : "change de côté"}.`;
+      ? "Trois tics avant chaque série. Aigu : monte. Deux médiums : tiens. Grave : descends, puis pose."
+      : s.exo === "ccf" || s.exo === "tete"
+      ? "Trois tics. Deux notes qui montent : tiens. Deux notes qui descendent : relâche. Le décompte est à l'écran."
+      : `Trois tics. Deux notes qui montent : tiens. Deux notes qui descendent : relâche. Trois notes : ${s.exo === "iso" ? "change de direction" : "change de côté"}.`;
     const v = $("#pVideo"); v.hidden = !c.video;
     if (c.video){ v.href = c.video; v.textContent = `Voir la vidéo, ${c.source} (nouvel onglet)`; }
     montrer("porte");
@@ -541,16 +542,14 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     else if (p.type === "prep"){ mot = "En place"; grand = String(Math.ceil(p.t1 - now)); detail = A.CONTENU[s.exo].lieu; }
     else if (respire(s)){
       const coh = Math.max(0, now - tl.coherence.t0);
-      if (s.type === "coherence"){ mot = "Cohérence"; grand = fmt(coh); }
-      else if (p.type === "libre" || B.gene){ mot = "Cohérence libre"; grand = fmt(coh); }
-      else { tenue = p.type === "tenue"; mot = tenue ? "Tenue" : "Relâche"; grand = `${p.r} / ${p.n}`; }
+      mot = "Cohérence"; grand = fmt(coh);
       detail = `${fmt(coh)} sur ${fmt(tl.coherence.objectif)}`;
     }
     else if (p.type === "rep"){ mot = p.mot; tenue = p.mot === "Tiens"; grand = `${p.r} / ${p.n}`; detail = `Série ${p.serie} sur ${p.series}`; }
     else if (p.type === "repos"){ mot = "Repos"; grand = String(Math.ceil(p.t1 - now)); detail = `Ensuite : série ${p.serie} sur ${p.series}`; }
     else if (p.type === "machoire"){ mot = "Mâchoire au repos"; grand = String(Math.ceil(p.t1 - now)); detail = "Lèvres jointes, dents desserrées, langue au palais"; }
     else if (p.type === "tenue"){ mot = "Tiens"; tenue = true; grand = String(Math.ceil(p.t1 - now)); detail = `${p.label}, ${p.r} sur ${p.n}`; }
-    else if (p.type === "relache"){ mot = "Relâche"; grand = String(Math.ceil(p.t1 - now)); detail = p.label; }
+    else if (p.type === "relache"){ mot = "Relâche"; grand = String(Math.ceil(p.t1 - now)); detail = p.label === "Tenue" ? "" : p.label; }
     else if (p.type === "transition"){ mot = s.exo === "iso" ? "Change de direction" : "Change de côté"; grand = String(Math.ceil(p.t1 - now)); detail = `Ensuite : ${p.label}`; }
     const m = $("#sMot"); if (m.textContent !== mot) m.textContent = mot; m.classList.toggle("tenue", tenue);
     if ($("#sGrand").textContent !== grand) $("#sGrand").textContent = grand;
@@ -645,6 +644,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   $("#fEnregistrer").addEventListener("click", () => enregistrer(false));
   $("#fGene").addEventListener("click", () => { B.gene = true; enregistrer(true); });
   $("#fAccueil").addEventListener("click", () => montrer("accueil"));
+  $("#fCoherence").addEventListener("click", () => lancer("coherence"));
 
   // ---------- accueil ----------
   const NOMS = { matin: "Matin", midi: "Midi", soir: "Soir" };
@@ -659,9 +659,9 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     const btn = $("#aLancer"), sous = $("#aSous");
     sous.hidden = a.type !== "bloc"; $("#aSeries").hidden = a.type !== "bloc"; btn.hidden = !a.type;
     if (a.type === "bloc"){
-      $("#aTitre").textContent = `${CE[a.creneau]} : bloc nuque, environ 10 min`;
+      $("#aTitre").textContent = `${CE[a.creneau]} : bloc nuque, environ 9 min`;
       sous.textContent = A.descriptionEtape(E);
-      $("#aPourquoi").textContent = "Endurance des muscles profonds du cou et de ceux qui tiennent les omoplates. Compte comme la cohérence du soir. Après PALIER ou un jour sans séance, jamais juste avant.";
+      $("#aPourquoi").textContent = "Endurance des muscles profonds du cou et de ceux qui tiennent les omoplates. Après PALIER ou un jour sans séance, jamais juste avant. La cohérence du soir s'enchaîne ensuite.";
       $("#aSeries").textContent = `Blocs propres de suite : tenues ${E.serie.tenues} sur 3, Y ${E.serie.y} sur 3.`;
       btn.textContent = "Commencer le bloc"; btn.dataset.mode = "bloc";
     } else if (a.type === "coherence"){
@@ -681,7 +681,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
       const coh = ej[k] ? `cohérence faite à ${ej[k]}` : i < iNow ? "pas de cohérence" : i === iNow ? "cohérence à faire" : "cohérence à venir";
       if (k !== "soir") return coh;
       const bloc = ej.bloc ? `bloc fait à ${ej.bloc.h}${ej.bloc.gene ? ", avec gêne" : ""}` : i === iNow ? "bloc à faire" : "bloc à venir";
-      return ej.bloc && !ej[k] && i === iNow ? `${bloc}, cohérence à faire` : ej[k] ? `${bloc}, ${coh}` : bloc;
+      return `${bloc}, ${coh}`;
     };
     const ul = $("#etatJour"); ul.innerHTML = "";
     const ligne = (cle, val, now) => {
@@ -808,7 +808,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     const R = E.reglages;
     $("#rTempo").value = R.tempo;
     const cyc = 10 * 60 / R.tempo;
-    $("#rTempoInfo").textContent = `Cycle de ${cyc.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} s, ${(60 / cyc).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} respirations par minute. Dans le bloc, 5 temps d'inspiration et 5 d'expiration.`;
+    $("#rTempoInfo").textContent = `Cycle de ${cyc.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} s, ${(60 / cyc).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} respirations par minute, 5 temps d'inspiration et 5 d'expiration.`;
     document.querySelectorAll("#rObjectif button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.v === R.objectif)));
     document.querySelectorAll("#rSons button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === R.son)));
     $("#rHauteur").value = R.hauteur; $("#rVolume").value = R.volume;

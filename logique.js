@@ -3,13 +3,15 @@
 (function (racine) {
   "use strict";
 
-  const VERSION = "0.2.0";
+  const VERSION = "0.3.0";
   const MODELE = 1;
   const PREP = 5;            // secondes de mise en place avant chaque exercice minuté
   const TRANSITION = 5;      // secondes entre deux côtés ou deux directions
   const REPOS_SERIES = 30;   // secondes entre deux séries de Y
-  const CYCLE_BLOC = 10;     // temps par cycle dans le bloc (5 inspiration, 5 expiration, verrouillé)
+  const CYCLE_BLOC = 10;     // temps par cycle de cohérence (5 inspiration, 5 expiration)
   const PHASE_BLOC = 5;
+  const TENUE_SEC = { phase: 5, cycle: 10 };   // flexion cranio-cervicale et tête décollée
+  const RELACHE_TENUES = 10;
   const MACHOIRE = 8;        // secondes de mâchoire au repos en début de micro-pause
   const MICRO = { reps: 5, tenue: 5, repos: 3 };
   const RELEVES = [0, 7, 21, 42];
@@ -21,6 +23,8 @@
     ccf: {
       titre: "Flexion cranio-cervicale",
       lieu: "Allongé sur le dos, serviette pliée sous la tête",
+      enPlace: "Allongé sur le dos, serviette pliée sous la tête. Langue au palais, dents desserrées. Deux doigts sur le SCOM, le muscle en corde sur le côté du cou. Respire normalement.",
+      pendant: "Petit « oui » : le menton descend légèrement, l'arrière de la tête reste sur la serviette. Seul point à surveiller : le SCOM reste mou sous les doigts.",
       but: "Entraîner en endurance les fléchisseurs profonds du cou, qui tiennent la tête sans l'aide des muscles de surface.",
       etapes: [
         "Langue posée au palais, dents desserrées.",
@@ -42,6 +46,8 @@
     tete: {
       titre: "Menton rentré, tête décollée",
       lieu: "Allongé sur le dos",
+      enPlace: "Allongé sur le dos. Langue au palais, dents desserrées. Respire normalement.",
+      pendant: "Rentre le menton, décolle la tête en le gardant rentré, redescends sans le relâcher. Seul point à surveiller : le menton ne ressort pas.",
       but: "Les mêmes muscles profonds, avec le poids de la tête en plus.",
       etapes: [
         "Langue posée au palais, dents desserrées.",
@@ -62,6 +68,8 @@
     y1: {
       titre: "Y au sol, coudes fléchis",
       lieu: "À plat ventre, front posé sur une serviette pliée",
+      enPlace: "À plat ventre, front sur une serviette pliée. Bras au-dessus de la tête en Y, coudes fléchis à environ 45°, pouces vers le plafond.",
+      pendant: "Les omoplates glissent en arrière et un peu vers le bas, les bras se décollent de quelques centimètres. Seul point à surveiller : le buste et la tête restent au sol.",
       but: "Endurance du bas des trapèzes, qui tiennent l'omoplate en arrière et en bas.",
       etapes: [
         "Bras au-dessus de la tête, écartés en Y, coudes fléchis à environ 45°.",
@@ -82,6 +90,8 @@
     y2: {
       titre: "Y au sol, bras tendus",
       lieu: "À plat ventre, front posé sur une serviette pliée",
+      enPlace: "À plat ventre, front sur une serviette pliée. Bras tendus au-dessus de la tête en Y, comme des aiguilles sur 10 h 10, pouces vers le plafond.",
+      pendant: "Les omoplates glissent en arrière et un peu vers le bas, les bras se décollent de quelques centimètres. Seul point à surveiller : le buste et la tête restent au sol.",
       but: "Le bas des trapèzes avec un levier plus long, donc plus de travail.",
       etapes: [
         "Bras tendus au-dessus de la tête, en Y, comme des aiguilles sur 10 h 10.",
@@ -103,6 +113,8 @@
     iso: {
       titre: "Isométries en quatre directions",
       lieu: "Assis",
+      enPlace: "Assis, menton rétracté. Main contre la tête à l'endroit annoncé : front, arrière de la tête, puis chaque tempe. Respire normalement.",
+      pendant: "La tête pousse contre la main, progressivement, intensité modérée. Seul point à surveiller : la tête ne bouge pas.",
       but: "Renforcer le cou dans les quatre directions, sans le bouger.",
       etapes: [
         "Menton rétracté ; main contre la tête : sur le front, derrière la tête, puis sur chaque tempe.",
@@ -122,6 +134,8 @@
     elev: {
       titre: "Étirement de l'élévateur de la scapula",
       lieu: "Assis",
+      enPlace: "Assis. Main du côté annoncé dans le dos.",
+      pendant: "Tourne la tête vers l'autre côté, puis penche-la en avant, nez vers l'aisselle ; l'autre main accompagne doucement. Seul point à surveiller : le nez reste dirigé vers l'aisselle.",
       but: "Étirer le muscle qui relie le haut de l'omoplate aux premières vertèbres du cou.",
       etapes: [
         "Pour étirer le côté droit : main droite dans le dos, dos de la main posé au bas du dos.",
@@ -142,6 +156,8 @@
     sousocc: {
       titre: "Étirement des sous-occipitaux",
       lieu: "Assis",
+      enPlace: "Assis. Paume de la main du côté annoncé sur l'oreille, pouce juste sous le crâne ; l'autre main sur le haut du crâne.",
+      pendant: "Tourne la tête vers l'autre côté, rentre le menton, enroule légèrement vers l'avant. Seul point à surveiller : la tête ne part jamais en arrière.",
       but: "Étirer les petits muscles profonds situés sous le crâne, entre l'arrière de la tête et le haut du cou.",
       etapes: [
         "Pour étirer le côté droit : paume de la main droite sur l'oreille droite, pouce à l'arrière du cou, juste sous le crâne.",
@@ -162,6 +178,8 @@
     micro: {
       titre: "Flexion cranio-cervicale assise",
       lieu: "Assis droit, au bureau",
+      enPlace: "Assis droit. Mâchoire au repos : lèvres jointes, dents desserrées, langue au palais. Deux doigts sur le SCOM.",
+      pendant: "Petit « oui », la tête ne recule ni n'avance. Seul point à surveiller : le SCOM reste mou.",
       but: "Refaire dans la journée le geste du bloc, là où la tête avance : au bureau.",
       etapes: [
         "Mâchoire au repos : lèvres jointes, dents desserrées, langue au palais.",
@@ -182,6 +200,8 @@
     coh: {
       titre: "Cohérence cardiaque",
       lieu: "Assis ou allongé",
+      enPlace: "Assis ou allongé, mâchoire au repos. Une main sur le ventre, l'autre en haut de la poitrine.",
+      pendant: "Suis le disque : inspire quand il grandit, expire quand il diminue. Seul point à surveiller : c'est le ventre qui bouge, pas la poitrine.",
       but: "Respirer lentement avec le ventre : une respiration haute fait travailler le SCOM, les scalènes et le haut des trapèzes à chaque inspiration.",
       etapes: [
         "Mâchoire au repos : lèvres jointes, dents desserrées, langue au palais.",
@@ -238,10 +258,11 @@
 
   // ---------- plan du bloc ----------
   function planBloc(etat, bd) {
-    const e = etat.etape, obj = etat.reglages.objectif;
+    const e = etat.etape;
     const s = [];
-    if (e === 1) s.push({ type: "couplee", exo: "ccf", reps: 10, tenue: "cycle", objectif: obj });
-    else s.push({ type: "couplee", exo: "tete", reps: etat.prog.tete.reps, tenue: etat.prog.tete.tenue, objectif: obj });
+    const tenues = (n, sec) => Array.from({ length: n }, () => ({ label: "Tenue", tenue: sec, repos: RELACHE_TENUES }));
+    if (e === 1) s.push({ type: "tenues", exo: "ccf", holds: tenues(10, TENUE_SEC.cycle), renfo: true });
+    else s.push({ type: "tenues", exo: "tete", holds: tenues(etat.prog.tete.reps, TENUE_SEC[etat.prog.tete.tenue]), renfo: true });
     s.push({ type: "reps", exo: e === 1 ? "y1" : "y2", series: 2, reps: etat.prog.y.reps, renfo: true });
     if (e === 3) {
       const holds = [];
@@ -257,7 +278,7 @@
   function dosage(seg) {
     if (seg.type === "coherence") return `${Math.round(seg.objectif / 60)} min, 5 temps d'inspiration et 5 d'expiration`;
     if (seg.type === "micro") return `${MACHOIRE} s de mâchoire au repos, puis ${MICRO.reps} tenues de ${MICRO.tenue} s séparées par ${MICRO.repos} s de relâchement`;
-    if (seg.type === "couplee") return `${seg.reps} tenues d'${seg.tenue === "cycle" ? "un cycle" : "une phase"}, alternées avec un relâchement, dans une cohérence de ${Math.round(seg.objectif / 60)} min`;
+    if (seg.exo === "ccf" || seg.exo === "tete") return `${seg.holds.length} tenues de ${seg.holds[0].tenue} s, ${RELACHE_TENUES} s de relâchement entre deux`;
     if (seg.type === "reps") return `${seg.series} séries de ${seg.reps}, ${REPOS_SERIES} s de repos entre les séries`;
     if (seg.exo === "iso") return "5 tenues d'une phase par direction, 4 directions";
     if (seg.exo === "elev") return "2 × 30 s par côté, en alternant";
@@ -273,29 +294,16 @@
     [PREP - 3, PREP - 2, PREP - 1].forEach(t => ev.push({ t, son: "tic" }));
   }
 
-  function timelineCouplee(seg, bd) {
+  function timelineCoherence(seg, bd) {
     const ev = [], pl = [], L = CYCLE_BLOC, T = PREP;
     prep(ev, pl);
-    const hold = seg.tenue === "cycle" ? L : PHASE_BLOC;
-    const nCycles = Math.max(Math.ceil(seg.objectif / (L * bd) - 1e-9), 2 * seg.reps);
+    const nCycles = Math.max(1, Math.ceil(seg.objectif / (L * bd) - 1e-9));
     for (let n = 0; n < nCycles * L; n++) {
-      const pos = n % L, c = Math.floor(n / L), inh = pos < PHASE_BLOC;
-      const k = inh ? pos : pos - PHASE_BLOC;
-      const e = { t: T + n * bd, son: k === 0 ? "hi" : k === PHASE_BLOC - 1 ? "lo" : "mid" };
-      const r = Math.floor(c / 2);
-      if (r < seg.reps) {
-        if (n === 2 * r * L) e.alt = "tenue";
-        if (n === 2 * r * L + hold) e.alt = "relache";
-      }
-      ev.push(e);
-    }
-    for (let r = 0; r < seg.reps; r++) {
-      const a = T + 2 * r * L * bd;
-      pl.push({ t0: a, t1: a + hold * bd, type: "tenue", r: r + 1, n: seg.reps });
-      pl.push({ t0: a + hold * bd, t1: a + 2 * L * bd, type: "relache", r: r + 1, n: seg.reps });
+      const pos = n % L, k = pos < PHASE_BLOC ? pos : pos - PHASE_BLOC;
+      ev.push({ t: T + n * bd, son: k === 0 ? "hi" : k === PHASE_BLOC - 1 ? "lo" : "mid" });
     }
     const fin = T + nCycles * L * bd;
-    if (2 * seg.reps < nCycles) pl.push({ t0: T + 2 * seg.reps * L * bd, t1: fin, type: "libre" });
+    pl.push({ t0: T, t1: fin, type: "libre" });
     ev.push({ t: fin, son: "fin" });
     return { duree: fin + 1.6, evenements: ev, plages: pl, respi: { t0: T, bd, L, inh: PHASE_BLOC }, coherence: { t0: T, fin, objectif: seg.objectif } };
   }
@@ -369,8 +377,7 @@
   }
 
   function timeline(seg, bd) {
-    const tl = seg.type === "couplee" ? timelineCouplee(seg, bd)
-      : seg.type === "coherence" ? timelineCouplee({ ...seg, reps: 0 }, bd)
+    const tl = seg.type === "coherence" ? timelineCoherence(seg, bd)
       : seg.type === "micro" ? timelineMicro()
       : seg.type === "reps" ? timelineReps(seg, bd) : timelineTenues(seg);
     tl.evenements.sort((a, b) => a.t - b.t);
@@ -452,12 +459,12 @@
   }
   function paliersTete() { return [{ tenue: "phase", reps: 5 }, { tenue: "cycle", reps: 5 }, { tenue: "cycle", reps: 10 }]; }
   function indexTete(t) { return paliersTete().findIndex(p => p.tenue === t.tenue && p.reps === t.reps); }
-  const fmtTete = p => `${p.reps} tenues d'${p.tenue === "cycle" ? "un cycle" : "une phase"}`;
+  const fmtTete = p => `${p.reps} × ${TENUE_SEC[p.tenue]} s`;
 
   function propositions(etat) {
     const out = [];
     if (etat.serie.tenues >= 3) {
-      if (etat.etape === 1) out.push({ id: "tenues", texte: "Passer à l'étape 2 : tête décollée (5 tenues d'une phase) et Y bras tendus (2 × 8)." });
+      if (etat.etape === 1) out.push({ id: "tenues", texte: "Passer à l'étape 2 : tête décollée (5 × 5 s) et Y bras tendus (2 × 8)." });
       else if (etat.etape === 2) {
         const i = indexTete(etat.prog.tete);
         if (i < 2) out.push({ id: "tenues", texte: `Tête décollée : passer à ${fmtTete(paliersTete()[i + 1])}.` });
@@ -481,13 +488,13 @@
   }
   function descriptionEtape(etat) {
     const e = etat.etape, y = etat.prog.y.reps;
-    if (e === 1) return `Étape 1 : 10 tenues d'un cycle, Y coudes fléchis 2 × ${y}, étirements.`;
+    if (e === 1) return `Étape 1 : flexion cranio-cervicale 10 × 10 s, Y coudes fléchis 2 × ${y}, étirements.`;
     if (e === 2) return `Étape 2 : tête décollée, ${fmtTete(etat.prog.tete)}, Y bras tendus 2 × ${y}, étirements.`;
     return `Étape 3 : tête décollée, ${fmtTete(etat.prog.tete)}, Y bras tendus 2 × ${y}, isométries, étirements.`;
   }
 
   const API = {
-    VERSION, MODELE, PREP, TRANSITION, REPOS_SERIES, MACHOIRE, MICRO, RELEVES, CONTENU, RESPIRATION, DIRECTIONS,
+    VERSION, MODELE, PREP, TRANSITION, TENUE_SEC, RELACHE_TENUES, REPOS_SERIES, MACHOIRE, MICRO, RELEVES, CONTENU, RESPIRATION, DIRECTIONS,
     dateLocale, heureLocale, etatInitial, migrer, planBloc, planCoherence, planMicro, dosage, timeline,
     ajouterCoherence, ajouterMicro, resumeJour, etatJour, creneauDe, actionDuJour, jourProgramme, ajouterJours,
     finirBloc, propositions, accepter, descriptionEtape

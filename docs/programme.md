@@ -37,8 +37,7 @@ abdominale lente et ample. Le tempo par défaut repris de `cc` (55 BPM, 5 temps 
 Respiration abdominale : une main sur le ventre, l'autre en haut de la poitrine ; le ventre monte à
 l'inspiration, la poitrine bouge peu, épaules et cou relâchés. Une respiration haute recrute à chaque
 inspiration les muscles accessoires (SCOM, scalènes, trapèzes supérieurs) : c'est l'enjeu pour la
-nuque autant que la cohérence elle-même. Consigne rappelée au début de chaque cohérence et de la
-séance couplée.
+nuque autant que la cohérence elle-même. Consigne rappelée au début de chaque cohérence.
 
 Chaque cohérence est enregistrée avec sa durée réelle. Le compteur du jour ne compte que celles qui
 atteignent l'objectif, réglable, 5 minutes par défaut.
@@ -47,30 +46,33 @@ atteignent l'objectif, réglable, 5 minutes par défaut.
 |---|---|---|
 | Matin | avant 11 h | Cohérence |
 | Midi | 11 h à 15 h | Cohérence |
-| Soir | à partir de 15 h | Bloc nuque s'il n'est pas fait (il compte comme cohérence), sinon cohérence |
+| Soir | à partir de 15 h | Bloc nuque s'il n'est pas fait, puis cohérence (à enchaîner après le bloc) |
 
 Un créneau manqué ne se rattrape pas et ne s'affiche pas en échec. Bornes réglables, à ajuster à
 l'usage.
 
-## Bloc nuque (1 fois par jour, environ 10 min)
+## Bloc nuque (1 fois par jour, environ 9 min)
 
 Déroulé :
 
-1. **Séance couplée, allongé** : cohérence à l'objectif (5 minutes par défaut, au moins le temps des
-   tenues), qui compte comme l'une des trois du jour.
-   Les premiers cycles alternent un cycle de tenue et un cycle de relâchement ; le reste est de la
-   cohérence libre. Dans le bloc, le rythme est verrouillé à 5 temps d'inspiration et 5
-   d'expiration (le tempo reste réglable) ; au tempo par défaut, un cycle dure 10,9 s et 10 tenues
-   occupent 3 min 38 s.
+1. **Flexion cranio-cervicale** (étape 1) ou **tête décollée** (étapes 2 et 3), allongé : tenues
+   chronométrées, sans bips de respiration. Respiration normale, rien d'autre à contrôler que le
+   point indiqué.
 2. **Y au sol.**
 3. **Isométries, assis** (étape 3 seulement).
 4. **Étirements.**
-5. **Fin** : deux déclarations (voir Progression) et bouton gêne.
+5. **Fin** : deux déclarations (voir Progression) et bouton gêne, puis proposition d'enchaîner la
+   cohérence du soir, séance à part. Le bloc ne compte pas comme cohérence.
+
+Jamais deux choses à faire en même temps : chaque exercice n'a qu'un point à surveiller pendant
+l'effort (voir les fiches).
 
 ### Cadences
 
 Au tempo par défaut, un temps dure 1,09 s.
 
+- **Flexion cranio-cervicale et tête décollée** : tenues de 10 s (5 s au premier palier de la tête
+  décollée), 10 s de relâchement entre deux ; deux notes pour tenir, deux pour relâcher.
 - **Entre deux exercices** : l'app attend « Prêt », puis laisse 5 s de mise en place (trois tics à la
   fin) avant le premier signal.
 - **Y** : montée 1 temps, tenue 2 temps (2,2 s), descente 1 temps, pause 1 temps, soit environ 5,5 s
@@ -86,7 +88,7 @@ Au tempo par défaut, un temps dure 1,09 s.
 
 | Exercice | Dosage |
 |---|---|
-| Flexion cranio-cervicale allongé, en séance couplée | 10 tenues d'un cycle, alternées avec un cycle de relâchement |
+| Flexion cranio-cervicale allongé | 10 tenues de 10 s, 10 s de relâchement |
 | Y au sol coudes fléchis (bas des trapèzes) | 2 × 8, puis 10, puis 12 ; 2 à 3 s en haut |
 | Étirement de l'élévateur de la scapula | 2 × 30 s par côté |
 | Étirement des sous-occipitaux | 3 × 6 s par côté |
@@ -97,22 +99,18 @@ Consignes : voir [Fiches d'exercice](#fiches-dexercice).
 
 | Exercice | Dosage |
 |---|---|
-| Menton rentré, tête décollée (remplace la flexion cranio-cervicale dans la séance couplée) | paliers : 5 tenues d'une phase, puis 5 tenues d'un cycle, puis 10 tenues d'un cycle |
+| Menton rentré, tête décollée (remplace la flexion cranio-cervicale) | paliers : 5 × 5 s, puis 5 × 10 s, puis 10 × 10 s |
 | Y au sol bras tendus (remplace la version coudes fléchis) | 2 × 8, puis 10, puis 12 ; reprise à 8 au passage d'étape |
 | Étirements | inchangés |
 
 Tête décollée : double progression, durée de tenue d'abord, répétitions ensuite. Consignes : voir
 les fiches.
 
-Tenue d'une phase : la grille de deux cycles par répétition ne change pas. La tenue occupe la
-première phase du cycle de tenue ; la seconde phase et le cycle suivant sont du relâchement.
-À 5 répétitions, l'alternance occupe 10 cycles, puis cohérence libre.
-
 ### Étape 3
 
 Ajout des isométries en quatre directions, placées après le Y, assis : main contre la tête, menton
 rétracté, pression graduelle sans mouvement, intensité modérée, 5 répétitions d'une phase par
-direction. La tête décollée reste au dernier palier (10 tenues d'un cycle) ; le Y poursuit sa
+direction. La tête décollée reste au dernier palier (10 × 10 s) ; le Y poursuit sa
 progression jusqu'à 12. Référence : guide canadien de contrôle moteur et renforcement cervical
 (voir Liens).
 
@@ -133,9 +131,9 @@ progression jusqu'à 12. Référence : guide canadien de contrôle moteur et ren
 
 ### Descente
 
-Bouton « gêne aujourd'hui », accessible pendant tout le bloc : les tenues de la séance couplée
-s'arrêtent (la cohérence continue, libre), les exercices de renforcement restants sont sautés, le
-bloc se termine par les étirements. Le bloc suivant repart au **début** de l'étape précédente (à
+Bouton « gêne aujourd'hui », accessible pendant tout le bloc : les exercices de renforcement
+restants sont sautés (flexion cranio-cervicale ou tête décollée, Y, isométries), le bloc se termine
+par les étirements. Le bloc suivant repart au **début** de l'étape précédente (à
 l'étape 1 : début de l'étape 1) ; les deux séries repartent à 0 et le Y à 8.
 
 ## Micro-pause (au bureau, toutes les 30 à 60 min)
@@ -165,11 +163,16 @@ Le ressenti de Gabriel prime sur le journal de l'app.
 
 ## Fiches d'exercice
 
-Reprises telles quelles dans l'app (écran Exercices et écran « Prêt » de chaque exercice). Les critères de choix des vidéos sont dans `videos.md`.
+Reprises telles quelles dans l'app. L'écran « Prêt » de chaque exercice ne montre que le déroulé, la mise en place, le seul point à surveiller pendant l'effort et le son ; la fiche complète reste à un clic. Les critères de choix des vidéos sont dans `videos.md`.
 
 ### Cohérence cardiaque
 
 *Assis ou allongé.* Respirer lentement avec le ventre : une respiration haute fait travailler le SCOM, les scalènes et le haut des trapèzes à chaque inspiration.
+
+Écran « Prêt » :
+
+- En place : assis ou allongé, mâchoire au repos. Une main sur le ventre, l'autre en haut de la poitrine.
+- Pendant : suis le disque : inspire quand il grandit, expire quand il diminue. Seul point à surveiller : c'est le ventre qui bouge, pas la poitrine.
 
 Étapes :
 
@@ -188,6 +191,11 @@ Erreurs à éviter :
 ### Flexion cranio-cervicale assise
 
 *Assis droit, au bureau.* Refaire dans la journée le geste du bloc, là où la tête avance : au bureau.
+
+Écran « Prêt » :
+
+- En place : assis droit. Mâchoire au repos : lèvres jointes, dents desserrées, langue au palais. Deux doigts sur le SCOM.
+- Pendant : petit « oui », la tête ne recule ni n'avance. Seul point à surveiller : le SCOM reste mou.
 
 Étapes :
 
@@ -208,6 +216,11 @@ Erreurs à éviter :
 ### Flexion cranio-cervicale
 
 *Allongé sur le dos, serviette pliée sous la tête.* Entraîner en endurance les fléchisseurs profonds du cou, qui tiennent la tête sans l'aide des muscles de surface.
+
+Écran « Prêt » :
+
+- En place : allongé sur le dos, serviette pliée sous la tête. Langue au palais, dents desserrées. Deux doigts sur le SCOM, le muscle en corde sur le côté du cou. Respire normalement.
+- Pendant : petit « oui » : le menton descend légèrement, l'arrière de la tête reste sur la serviette. Seul point à surveiller : le SCOM reste mou sous les doigts.
 
 Étapes :
 
@@ -230,6 +243,11 @@ Erreurs à éviter :
 
 *Allongé sur le dos.* Les mêmes muscles profonds, avec le poids de la tête en plus.
 
+Écran « Prêt » :
+
+- En place : allongé sur le dos. Langue au palais, dents desserrées. Respire normalement.
+- Pendant : rentre le menton, décolle la tête en le gardant rentré, redescends sans le relâcher. Seul point à surveiller : le menton ne ressort pas.
+
 Étapes :
 
 1. Langue posée au palais, dents desserrées.
@@ -250,6 +268,11 @@ Erreurs à éviter :
 
 *À plat ventre, front posé sur une serviette pliée.* Endurance du bas des trapèzes, qui tiennent l'omoplate en arrière et en bas.
 
+Écran « Prêt » :
+
+- En place : à plat ventre, front sur une serviette pliée. Bras au-dessus de la tête en Y, coudes fléchis à environ 45°, pouces vers le plafond.
+- Pendant : les omoplates glissent en arrière et un peu vers le bas, les bras se décollent de quelques centimètres. Seul point à surveiller : le buste et la tête restent au sol.
+
 Étapes :
 
 1. Bras au-dessus de la tête, écartés en Y, coudes fléchis à environ 45°.
@@ -269,6 +292,11 @@ Erreurs à éviter :
 ### Y au sol, bras tendus
 
 *À plat ventre, front posé sur une serviette pliée.* Le bas des trapèzes avec un levier plus long, donc plus de travail.
+
+Écran « Prêt » :
+
+- En place : à plat ventre, front sur une serviette pliée. Bras tendus au-dessus de la tête en Y, comme des aiguilles sur 10 h 10, pouces vers le plafond.
+- Pendant : les omoplates glissent en arrière et un peu vers le bas, les bras se décollent de quelques centimètres. Seul point à surveiller : le buste et la tête restent au sol.
 
 Étapes :
 
@@ -291,6 +319,11 @@ Erreurs à éviter :
 
 *Assis.* Renforcer le cou dans les quatre directions, sans le bouger.
 
+Écran « Prêt » :
+
+- En place : assis, menton rétracté. Main contre la tête à l'endroit annoncé : front, arrière de la tête, puis chaque tempe. Respire normalement.
+- Pendant : la tête pousse contre la main, progressivement, intensité modérée. Seul point à surveiller : la tête ne bouge pas.
+
 Étapes :
 
 1. Menton rétracté ; main contre la tête : sur le front, derrière la tête, puis sur chaque tempe.
@@ -309,6 +342,11 @@ Erreurs à éviter :
 ### Étirement de l'élévateur de la scapula
 
 *Assis.* Étirer le muscle qui relie le haut de l'omoplate aux premières vertèbres du cou.
+
+Écran « Prêt » :
+
+- En place : assis. Main du côté annoncé dans le dos.
+- Pendant : tourne la tête vers l'autre côté, puis penche-la en avant, nez vers l'aisselle ; l'autre main accompagne doucement. Seul point à surveiller : le nez reste dirigé vers l'aisselle.
 
 Étapes :
 
@@ -329,6 +367,11 @@ Erreurs à éviter :
 ### Étirement des sous-occipitaux
 
 *Assis.* Étirer les petits muscles profonds situés sous le crâne, entre l'arrière de la tête et le haut du cou.
+
+Écran « Prêt » :
+
+- En place : assis. Paume de la main du côté annoncé sur l'oreille, pouce juste sous le crâne ; l'autre main sur le haut du crâne.
+- Pendant : tourne la tête vers l'autre côté, rentre le menton, enroule légèrement vers l'avant. Seul point à surveiller : la tête ne part jamais en arrière.
 
 Étapes :
 

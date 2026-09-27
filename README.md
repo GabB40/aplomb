@@ -29,13 +29,14 @@ URL : https://aplomb.s1t3.link
 La version est la constante `VERSION` de `logique.js` ; `index.html` charge `logique.js?v=<version>`
 (les deux doivent concorder, `deploy.sh` le vérifie). Tag Git `v<version>`.
 
-## Fonctionnement (v0.2)
+## Fonctionnement (v0.3)
 
 - **Accueil « Aujourd'hui »** : l'action du créneau (matin et midi : cohérence ; soir : bloc nuque
-  s'il n'est pas fait, sinon cohérence) avec sa raison, l'état de la journée par créneau, les
+  s'il n'est pas fait, puis cohérence) avec sa raison, l'état de la journée par créneau, les
   micro-pauses du jour, le jour du programme et le prochain relevé, « Le programme en bref ».
-- **Séances** : bloc (un écran « Prêt » par exercice, séance minutée au son, deux déclarations,
-  propositions de palier), cohérence seule, micro-pause guidée d'environ 45 s.
+- **Séances** : bloc (un écran « Prêt » par exercice avec déroulé, mise en place, point à surveiller
+  et son ; séance minutée ; deux déclarations ; palier ; cohérence du soir à enchaîner), cohérence
+  seule, micro-pause guidée d'environ 45 s.
 - **Exercices** : une fiche par exercice (but, position, étapes, sensation, erreurs, vidéo validée),
   ouverte aussi depuis chaque écran « Prêt ».
 - **Signaux d'arrêt** : bouton permanent en haut de chaque écran ; pendant une séance, il la met en
@@ -99,7 +100,7 @@ aws cloudfront list-distributions --region us-east-1 \
   recloner.
 - **Coûts** : free tier CloudFront et S3 ; ne pas activer le WAF (facturé à part en pay-as-you-go).
 
-## Hors périmètre (v0.2)
+## Hors périmètre (v0.3)
 
 Lien avec PALIER, notifications système, mode bureau (rappel sonore des micro-pauses),
 illustrations de reconnaissance, synchronisation entre appareils, historique graphique, installation
