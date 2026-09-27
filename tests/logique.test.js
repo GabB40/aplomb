@@ -204,3 +204,102 @@ test("import : aller-retour et refus d'un fichier étranger", () => {
   assert.throws(() => A.migrer({ foo: 1 }));
   assert.throws(() => A.migrer({ v: 1, etape: 7 }));
 });
+
+test("fiches : but, position, étapes, sensation, erreurs ; une vidéo validée sauf pour la cohérence", () => {
+  for (const [id, c] of Object.entries(A.CONTENU)) {
+    assert.ok(c.titre && c.lieu && c.but && c.sensation, id);
+    assert.ok(c.etapes.length >= 3 && c.erreurs.length >= 2, id);
+    if (id === "coh") assert.equal(c.video, null);
+    else assert.ok(/^https:\/\//.test(c.video) && c.source, id);
+  }
+});
+
+test("créneaux : midi à 11 h, soir à 15 h par défaut", () => {
+  const c = A.etatInitial().reglages.creneaux;
+  assert.equal(A.creneauDe("10:59", c), "matin");
+  assert.equal(A.creneauDe("11:00", c), "midi");
+  assert.equal(A.creneauDe("14:59", c), "midi");
+  assert.equal(A.creneauDe("15:00", c), "soir");
+});
+
+test("action du jour : cohérence du créneau, bloc le soir, puis plus rien", () => {
+  const d = "2026-12-01";
+  let e = A.etatInitial();
+  assert.equal(A.actionDuJour(e, d, "08:00").type, "coherence");
+  e = A.ajouterCoherence(e, { date: d, h: "08:00", s: 120 });
+  assert.equal(A.actionDuJour(e, d, "08:10").type, "coherence", "sous l'objectif, le créneau n'est pas fait");
+  e = A.ajouterCoherence(e, { date: d, h: "08:10", s: 300 });
+  assert.deepEqual(A.actionDuJour(e, d, "09:00"), { creneau: "matin", type: null, suite: { creneau: "midi", heure: 11 } });
+  assert.equal(A.actionDuJour(e, d, "12:00").type, "coherence");
+  assert.equal(A.actionDuJour(e, d, "18:00").type, "bloc");
+  e = A.ajouterCoherence(e, { date: d, h: "21:00", s: 300 });
+  e = A.finirBloc(e, { date: d, h: "21:10", tenuesPropres: true, yPropres: true }).etat;
+  assert.deepEqual(A.actionDuJour(e, d, "21:30"), { creneau: "soir", type: null, suite: null });
+});
+
+test("action du jour : bloc fait avant 15 h, reste la cohérence du soir", () => {
+  const d = "2026-12-02";
+  let e = A.ajouterCoherence(A.etatInitial(), { date: d, h: "14:00", s: 300 });
+  e = A.finirBloc(e, { date: d, h: "14:10", tenuesPropres: true, yPropres: true }).etat;
+  assert.equal(A.actionDuJour(e, d, "18:00").type, "coherence");
+  const ej = A.etatJour(e, d);
+  assert.equal(ej.midi, "14:00"); assert.equal(ej.soir, null); assert.equal(ej.bloc.h, "14:10");
+});
+
+test("créneaux réglables", () => {
+  const e = A.etatInitial(); e.reglages.creneaux = { midi: 12, soir: 17 };
+  assert.equal(A.actionDuJour(e, "2026-12-03", "16:00").creneau, "midi");
+  assert.equal(A.actionDuJour(e, "2026-12-03", "17:00").type, "bloc");
+});
+
+test("jour du programme et prochain relevé", () => {
+  assert.equal(A.jourProgramme(null, "2026-09-27"), null);
+  assert.deepEqual(A.jourProgramme("2026-09-27", "2026-09-27"), { n: 0, duree: 42, releve: { j: 0, date: "2026-09-27", aujourdhui: true } });
+  assert.deepEqual(A.jourProgramme("2026-09-27", "2026-09-30").releve, { j: 7, date: "2026-10-04", aujourdhui: false });
+  assert.deepEqual(A.jourProgramme("2026-09-27", "2026-10-26"), { n: 29, duree: 42, releve: { j: 42, date: "2026-11-08", aujourdhui: false } }, "passage à l'heure d'hiver");
+  assert.equal(A.jourProgramme("2026-09-27", "2026-11-08").releve.aujourdhui, true);
+  assert.equal(A.jourProgramme("2026-09-27", "2026-11-09").releve, null);
+  assert.equal(A.jourProgramme("2026-09-27", "2026-09-25").n, -2);
+});
+
+test("micro-pause : mâchoire au repos, 5 tenues de 5 s, 45 s après la mise en place", () => {
+  const tl = A.timeline(A.planMicro()[0], BD);
+  assert.equal(tl.plages[1].type, "machoire");
+  const tenues = tl.plages.filter(p => p.type === "tenue");
+  assert.equal(tenues.length, 5);
+  assert.ok(tenues.every(p => p.t1 - p.t0 === 5));
+  assert.equal(tl.plages.filter(p => p.type === "relache").length, 4);
+  assert.equal(tl.evenements.find(e => e.son === "fin").t - A.PREP, 45);
+});
+
+test("cohérence seule : aucune tenue, au moins l'objectif", () => {
+  const tl = A.timeline(A.planCoherence(A.etatInitial())[0], BD);
+  assert.ok(!tl.evenements.some(e => e.alt));
+  assert.deepEqual(tl.plages.map(p => p.type), ["prep", "libre"]);
+  assert.ok(tl.coherence.fin - tl.coherence.t0 >= 300);
+});
+
+test("micro-pauses comptées par jour", () => {
+  let e = A.etatInitial();
+  e = A.ajouterMicro(A.ajouterMicro(e, "2026-12-04"), "2026-12-04");
+  assert.equal(A.etatJour(e, "2026-12-04").micro, 2);
+  assert.equal(A.etatJour(e, "2026-12-05").micro, 0);
+});
+
+test("import : réglages v0.1 complétés, créneaux et date invalides remis par défaut", () => {
+  const v01 = A.etatInitial(); delete v01.reglages.creneaux; delete v01.reglages.debut;
+  const e = A.migrer(JSON.parse(JSON.stringify(v01)));
+  assert.deepEqual(e.reglages.creneaux, { midi: 11, soir: 15 }); assert.equal(e.reglages.debut, null);
+  const faux = A.etatInitial(); faux.reglages.creneaux = { midi: 16, soir: 12 }; faux.reglages.debut = "demain";
+  const f = A.migrer(JSON.parse(JSON.stringify(faux)));
+  assert.deepEqual(f.reglages.creneaux, { midi: 11, soir: 15 }); assert.equal(f.reglages.debut, null);
+  const bon = A.etatInitial(); bon.reglages.debut = "2026-09-27";
+  assert.equal(A.migrer(JSON.parse(JSON.stringify(bon))).reglages.debut, "2026-09-27");
+});
+
+test("micro-pause et cohérence ne modifient pas l'état reçu", () => {
+  const e = A.etatInitial(), gel = JSON.stringify(e);
+  A.ajouterMicro(e, "2026-12-06");
+  A.actionDuJour(e, "2026-12-06", "08:00");
+  assert.equal(JSON.stringify(e), gel);
+});

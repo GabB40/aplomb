@@ -37,6 +37,11 @@ nouvelle. Les décisions de contenu santé sont détaillées dans `programme.md`
 | 30 | Un seul bloc par jour compte pour la progression ; un second bloc le même jour se fait mais n'est pas enregistré | Claude, à confirmer |
 | 31 | Étape 3, isométries : repos d'une phase entre les répétitions, 5 s de transition entre directions | Claude, à confirmer avant l'étape 3 |
 | 32 | CloudFront ignore la chaîne de requête (cache policy CachingOptimized) : `?v=` ne sert qu'au cache du navigateur, chaque déploiement invalide `/*` | Claude |
+| 33 | Micro-pause : flexion cranio-cervicale assise (le hochement du bloc), pas la rétraction ; la rétraction reste dans le menton rétracté des isométries de l'étape 3, et la poussée de la tête contre un appui reste l'isométrie vers l'arrière de l'étape 3 | tranché par Claude à la demande de Gabriel |
+| 34 | L'app répond à trois besoins : apprendre (fiche par exercice), pratiquer (accueil « Aujourd'hui » avec l'action du créneau, séances guidées), juger (hors de l'app : relevé et ressenti ; l'app n'affiche que le jour du programme et le prochain relevé). Accueil par créneaux, cohérence seule et micro-pause guidée entrent en v0.2 (fin du report de la 29) | proposé par Claude, validé ; POC demandé par Gabriel |
+| 35 | Écran Exercices : une fiche par exercice (but, position, étapes, sensation, erreurs, vidéo validée), à la place de l'écran Vidéos (28) ; chaque écran « Prêt » renvoie à sa fiche. Texte des fiches dans `programme.md` | proposé par Claude, validé |
+| 36 | Vidéos : une vidéo validée par exercice, sur critères écrits (`videos.md`) ; sous-occipitaux par un lien qui ne lit que le segment utile | critères : Claude ; validation : Gabriel |
+| 37 | Date de départ du programme (J0) et bornes des créneaux en réglages ; les relevés J0, J7, J21, J42 sont annoncés, jamais saisis dans l'app | proposé par Claude, validé |
 
 ## Modèle de données (v1)
 
@@ -54,7 +59,12 @@ séances entre minuit et 2 h).
     coherences: [{ h: "07:40", s: 305, ok: true }],
     bloc: { h: "21:10", etape: 1, tenuesPropres: true, yPropres: true, gene: false },
     micro: 0 } },
-  reglages: { tempo: 55, objectif: 300, son: "bip", hauteur: 0, volume: 0.7 } }
+  reglages: { tempo: 55, objectif: 300, son: "bip", hauteur: 0, volume: 0.7,
+    debut: "2026-09-27" | null, creneaux: { midi: 11, soir: 15 } } }
 ```
+
+`micro` compte les micro-pauses allées au bout. `debut` et `creneaux` arrivent en v0.2 : un fichier
+v0.1 s'importe tel quel, les valeurs absentes ou invalides reprennent leur défaut. La cohérence d'un
+créneau est la première à l'objectif dont l'heure tombe dans ses bornes.
 
 `ok` fige le résultat au moment de la séance : changer l'objectif ne réécrit pas l'historique.

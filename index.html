@@ -51,7 +51,18 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 /* accueil */
 .bloc-jour{border-left:2px solid var(--laiton);padding:.2rem 0 .2rem 1.1rem;display:grid;gap:.7rem}
 .bloc-jour .bouton{justify-self:start;margin-top:.4rem}
+.flash{margin-top:1rem;padding:.7rem 1rem;background:var(--surface);border-radius:10px;font-size:.93rem}
 .aujourdhui{margin-top:2rem;display:grid;gap:.35rem}
+.aujourdhui .actions{margin-top:.9rem}
+.etat-jour{list-style:none;margin:.2rem 0 0;padding:0;display:grid;gap:.3rem}
+.etat-jour li{display:grid;grid-template-columns:7.5rem 1fr;gap:.6rem}
+.etat-jour .cle{color:var(--muted)}
+.etat-jour .maintenant .cle{color:var(--laiton);font-weight:600}
+.bref{margin-top:2rem}
+.bref summary{cursor:pointer;font-weight:600}
+.bref ul{margin:.8rem 0 0;padding-left:1.1rem;display:grid;gap:.45rem}
+.lien{background:none;border:0;padding:0;color:var(--laiton);text-decoration:underline;text-underline-offset:.2em;text-align:left}
+.sous{margin-top:1.5rem}
 nav{display:flex;gap:1.4rem;margin-top:2.2rem;padding-top:1.1rem;border-top:1px solid var(--line)}
 nav button{background:none;border:0;color:var(--text);padding:.3rem 0;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:.3em}
 footer{margin-top:2.5rem;color:var(--muted);font-size:.8rem}
@@ -97,6 +108,7 @@ legend{font-weight:600;padding:0;margin-bottom:.3rem}
 .liste li{display:grid;gap:.1rem}
 .groupe{margin-top:1.6rem}
 .reglage{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:1rem}
+.reglage input[type=date]{font:inherit;padding:.4rem .6rem;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--text)}
 .reglage input[type=number]{width:5.5rem;font:inherit;padding:.4rem .6rem;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--text);text-align:center}
 .reglage input[type=range]{width:10rem;accent-color:var(--laiton)}
 .puces{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.6rem}
@@ -124,21 +136,33 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   <!-- accueil -->
   <section id="accueil">
     <p class="muted" id="dateJour"></p>
-    <div class="bloc-jour" style="margin-top:1rem">
-      <h2>Bloc nuque</h2>
-      <p id="descEtape"></p>
-      <p class="muted petit" id="series"></p>
-      <p id="blocFait" hidden></p>
-      <button class="bouton primaire" id="lancer">Commencer le bloc</button>
-      <p class="muted petit">Le soir, après PALIER ou un jour sans séance, jamais juste avant.</p>
+    <p class="muted petit" id="jourProg"></p>
+    <p class="flash" id="flash" role="status" hidden></p>
+    <div class="bloc-jour" style="margin-top:1.2rem">
+      <h2 id="aTitre"></h2>
+      <p id="aSous" hidden></p>
+      <p id="aPourquoi"></p>
+      <p class="muted petit" id="aSeries" hidden></p>
+      <button class="bouton primaire" id="aLancer" hidden></button>
     </div>
     <div class="aujourdhui">
       <h3>Aujourd'hui</h3>
-      <p id="resumeJour"></p>
-      <p class="muted petit">Cohérences seules : <a href="https://cc.s1t3.link" target="_blank" rel="noopener">cc.s1t3.link</a> en attendant la prochaine version. Elles ne sont pas comptées ici.</p>
+      <ul class="etat-jour" id="etatJour"></ul>
+      <div class="actions" id="autres"></div>
     </div>
+    <details class="bref" id="bref">
+      <summary>Le programme en bref</summary>
+      <ul>
+        <li>Six semaines, puis on juge. Ce qui manque d'abord, c'est l'endurance des muscles profonds du cou et de ceux qui tiennent les omoplates.</li>
+        <li>Trois cohérences cardiaques par jour, matin, midi et soir, de 5 minutes par défaut.</li>
+        <li>Un bloc nuque par jour, le soir, d'environ 10 minutes, après PALIER ou un jour sans séance, jamais juste avant. Il compte comme la cohérence du soir.</li>
+        <li>Au bureau, une micro-pause d'environ 45 secondes toutes les 30 à 60 minutes.</li>
+        <li>Après 3 blocs propres de suite, l'app propose le palier suivant. En cas de gêne, le bloc suivant redescend.</li>
+        <li>La tension ressentie se note hors de l'app à J0, J7, J21 et J42. Ce relevé et ton ressenti jugent le programme, pas le journal.</li>
+      </ul>
+    </details>
     <nav>
-      <button data-aller="videos">Vidéos</button>
+      <button data-aller="exercices">Exercices</button>
       <button data-aller="journal">Journal</button>
       <button data-aller="reglages">Réglages</button>
     </nav>
@@ -151,12 +175,13 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     <h2 id="pTitre"></h2>
     <p class="lieu" id="pLieu"></p>
     <p class="dosage" id="pDosage"></p>
-    <ul class="consignes" id="pConsignes"></ul>
+    <ol class="consignes" id="pConsignes"></ol>
+    <button class="lien" id="pFiche" style="margin-top:1rem">Fiche complète : ce qu'on doit sentir, erreurs à éviter</button>
     <p class="note" id="pRespi" hidden></p>
     <p class="note alerte" id="pGene" hidden>Gêne notée : le renforcement est sauté, le bloc se termine par les étirements.</p>
     <p class="muted petit" id="pSon" style="margin-top:1rem"></p>
     <a class="video" id="pVideo" target="_blank" rel="noopener"></a>
-    <div class="actions">
+    <div class="actions" id="pActions">
       <button class="bouton primaire" id="pret">Prêt</button>
       <button class="bouton gene" id="pGeneBtn">Gêne aujourd'hui</button>
       <button class="bouton" id="pStop">Arrêter le bloc</button>
@@ -212,12 +237,29 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     </div>
   </section>
 
-  <!-- vidéos -->
-  <section id="videos" hidden>
-    <h2>Vidéos</h2>
-    <p class="muted petit" style="margin-top:.5rem">Liens externes, ouverts dans un nouvel onglet. À vérifier : la vidéo se lance sans l'appli, le geste correspond à la consigne.</p>
-    <div id="listeVideos"></div>
+  <!-- exercices -->
+  <section id="exercices" hidden>
+    <h2>Exercices</h2>
+    <p class="muted petit" style="margin-top:.5rem">Une fiche par exercice : le but, la position, les étapes, ce qu'on doit sentir, les erreurs à éviter et la vidéo validée.</p>
+    <div id="listeExos"></div>
     <div class="actions"><button class="bouton" data-aller="accueil">Retour</button></div>
+  </section>
+
+  <!-- fiche -->
+  <section id="fiche" hidden>
+    <h2 id="xTitre"></h2>
+    <p class="lieu" id="xLieu"></p>
+    <p style="margin-top:1rem" id="xBut"></p>
+    <p class="dosage" id="xDosage" hidden></p>
+    <h3 class="sous">Étapes</h3>
+    <ol class="consignes" id="xEtapes"></ol>
+    <h3 class="sous">À sentir</h3>
+    <p style="margin-top:.6rem" id="xSensation"></p>
+    <h3 class="sous">Erreurs à éviter</h3>
+    <ul class="consignes" id="xErreurs"></ul>
+    <p class="sous" id="xVideoBloc"><a id="xVideo" target="_blank" rel="noopener"></a><br><span class="muted petit" id="xSource"></span></p>
+    <p class="muted petit sous" id="xSansVideo" hidden>Pas de vidéo : la consigne suffit.</p>
+    <div class="actions"><button class="bouton" id="xRetour">Retour</button></div>
   </section>
 
   <!-- journal -->
@@ -242,6 +284,13 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   <!-- réglages -->
   <section id="reglages" hidden>
     <h2>Réglages</h2>
+    <div class="groupe">
+      <h3>Programme</h3>
+      <div class="reglage"><label for="rDebut">Date de départ (J0)</label><input type="date" id="rDebut"></div>
+      <p class="muted petit" style="margin-top:.4rem">Jour du premier relevé. Les relevés J7, J21 et J42 en découlent.</p>
+      <div class="reglage"><label for="rMidi">Créneau de midi à partir de (heure)</label><input type="number" id="rMidi" min="1" max="22" step="1"></div>
+      <div class="reglage"><label for="rSoir">Créneau du soir à partir de (heure)</label><input type="number" id="rSoir" min="2" max="23" step="1"></div>
+    </div>
     <div class="groupe">
       <h3>Rythme</h3>
       <div class="reglage"><label for="rTempo">Tempo (bips par minute)</label><input type="number" id="rTempo" min="40" max="80" step="1"></div>
@@ -275,13 +324,13 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     </ul>
     <p class="muted petit">Cette app ne remplace pas un avis médical. Le bilan kiné prime.</p>
     <div class="actions">
-      <button class="bouton gene" id="arretStop" hidden>Arrêter le bloc</button>
+      <button class="bouton gene" id="arretStop" hidden>Arrêter</button>
       <button class="bouton" id="arretFermer">Fermer</button>
     </div>
   </dialog>
 </main>
 
-<script src="logique.js?v=0.1.0"></script>
+<script src="logique.js?v=0.2.0"></script>
 <script>
 (() => {
   "use strict";
@@ -304,11 +353,13 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   const fmt = s => { s = Math.max(0, Math.floor(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
   const bd = () => 60 / E.reglages.tempo;
   const aujourdhui = () => A.dateLocale(new Date());
-  const ecrans = ["accueil", "porte", "seance", "fin", "videos", "journal", "reglages"];
+  const ecrans = ["accueil", "porte", "seance", "fin", "exercices", "fiche", "journal", "reglages"];
+  const fmtDate = d => { const [y, m, j] = d.split("-").map(Number); return new Date(y, m - 1, j).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }); };
   function montrer(id){
     ecrans.forEach(e => { $("#" + e).hidden = e !== id; });
-    $("#marque").disabled = ["porte", "seance", "fin"].includes(id);
+    $("#marque").disabled = ["porte", "seance", "fin"].includes(id) || (id === "fiche" && B.actif);
     if (id === "accueil") rendreAccueil();
+    if (id === "exercices") rendreExercices();
     if (id === "journal") rendreJournal();
     if (id === "reglages") rendreReglages();
     window.scrollTo(0, 0);
@@ -374,34 +425,45 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   function libererEcran(){ garderEcran = false; try { wake && wake.release(); } catch {} wake = null; }
   document.addEventListener("visibilitychange", () => { if (!document.hidden) verrouEcran(); });
 
-  // ---------- bloc ----------
-  const B = { plan: [], i: 0, gene: false, tl: null, T0: 0, idx: 0, pi: 0, timer: 0, raf: 0, pause: false, debut: null, cohNotee: false, actif: false };
+  // ---------- séances : bloc, cohérence seule, micro-pause ----------
+  const B = { mode: "bloc", plan: [], i: 0, gene: false, tl: null, T0: 0, idx: 0, pi: 0, timer: 0, raf: 0, pause: false, debut: null, cohNotee: false, actif: false };
+  const respire = s => s.type === "couplee" || s.type === "coherence";
+  let flash = "";
 
-  function lancerBloc(){
-    B.plan = A.planBloc(E, bd()); B.i = 0; B.gene = false; B.actif = true;
+  function lancer(mode){
+    B.mode = mode;
+    B.plan = mode === "bloc" ? A.planBloc(E, bd()) : mode === "coherence" ? A.planCoherence(E) : A.planMicro();
+    B.i = 0; B.gene = false; B.actif = true;
     montrerPorte();
   }
   function seg(){ return B.plan[B.i]; }
   function suivantIndex(i){ while (i < B.plan.length && B.gene && B.plan[i].renfo) i++; return i; }
 
   function montrerPorte(){
-    const s = seg(), c = A.CONTENU[s.exo];
+    const s = seg(), c = A.CONTENU[s.exo], bloc = B.mode === "bloc";
+    $("#pRang").hidden = !bloc;
     $("#pRang").textContent = `Exercice ${B.i + 1} sur ${B.plan.length}`;
     $("#pTitre").textContent = c.titre;
     $("#pLieu").textContent = c.lieu;
     $("#pDosage").textContent = A.dosage(s);
     const ul = $("#pConsignes"); ul.innerHTML = "";
-    c.consignes.forEach(t => { const li = document.createElement("li"); li.textContent = t; ul.appendChild(li); });
+    c.etapes.forEach(t => { const li = document.createElement("li"); li.textContent = t; ul.appendChild(li); });
     $("#pRespi").hidden = s.type !== "couplee";
     $("#pRespi").textContent = "Avant les tenues, respiration abdominale. " + A.RESPIRATION;
     $("#pGene").hidden = !B.gene;
-    $("#pGeneBtn").hidden = B.gene;
+    $("#pGeneBtn").hidden = B.gene || !bloc;
+    $("#pStop").textContent = bloc ? "Arrêter le bloc" : "Arrêter";
     $("#pSon").textContent = s.type === "couplee"
       ? "Au son : les bips suivent la respiration, comme dans cc. Deux notes qui montent : tenue. Deux notes qui descendent : relâche."
+      : s.type === "coherence"
+      ? "Au son : les bips suivent la respiration, comme dans cc."
+      : s.type === "micro"
+      ? "Au son : trois tics, puis mâchoire au repos. Deux notes qui montent : tiens. Deux notes qui descendent : relâche."
       : s.type === "reps"
         ? "Au son : aigu, monte ; deux médiums, tiens ; grave, descends ; puis pose. Trois tics avant chaque série."
         : `Au son : deux notes qui montent, tiens ; deux notes qui descendent, relâche ; trois notes, ${s.exo === "iso" ? "change de direction" : "change de côté"}.`;
-    const v = $("#pVideo"); v.href = c.video; v.textContent = c.videoLibelle ? `${c.videoLibelle} (nouvel onglet)` : "Voir la vidéo (nouvel onglet)";
+    const v = $("#pVideo"); v.hidden = !c.video;
+    if (c.video){ v.href = c.video; v.textContent = `Voir la vidéo, ${c.source} (nouvel onglet)`; }
     montrer("porte");
   }
 
@@ -412,9 +474,10 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     B.tl = A.timeline(s, bd());
     B.T0 = ctx.currentTime + 0.15; B.idx = 0; B.pi = 0; B.pause = false; B.cohNotee = false; B.debut = new Date();
     $("#sTitre").textContent = A.CONTENU[s.exo].titre;
-    $("#orb").toggleAttribute("hidden", s.type !== "couplee");
+    $("#orb").toggleAttribute("hidden", !respire(s));
     $("#scene").classList.remove("en-pause"); $("#sPause").textContent = "Pause";
-    $("#sGene").hidden = B.gene;
+    $("#sGene").hidden = B.gene || B.mode !== "bloc";
+    $("#sStop").textContent = B.mode === "bloc" ? "Arrêter le bloc" : "Arrêter";
     garderEcran = true; verrouEcran();
     montrer("seance");
     clearInterval(B.timer); B.timer = setInterval(planifier, 25); planifier();
@@ -432,7 +495,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   function arreterMinuterie(){ clearInterval(B.timer); cancelAnimationFrame(B.raf); B.timer = 0; B.raf = 0; }
 
   function noterCoherence(secondes){
-    if (B.cohNotee || seg().type !== "couplee" || secondes < 1) return;
+    if (B.cohNotee || !respire(seg()) || secondes < 1) return;
     B.cohNotee = true;
     E = A.ajouterCoherence(E, { date: A.dateLocale(B.debut), h: A.heureLocale(B.debut), s: secondes });
     ecrire();
@@ -443,10 +506,20 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   }
   function finSegment(){
     arreterMinuterie();
-    if (seg().type === "couplee") noterCoherence(B.tl.coherence.fin - B.tl.coherence.t0);
+    const s = seg();
+    if (respire(s)) noterCoherence(B.tl.coherence.fin - B.tl.coherence.t0);
+    if (s.type === "micro"){ E = A.ajouterMicro(E, A.dateLocale(B.debut)); ecrire(); }
     B.tl = null;
     B.i = suivantIndex(B.i + 1);
-    if (B.i >= B.plan.length) finBloc(); else montrerPorte();
+    if (B.i < B.plan.length) montrerPorte();
+    else if (B.mode === "bloc") finBloc();
+    else finSimple();
+  }
+  function finSimple(){
+    arreterMinuterie(); fermerCtx(); libererEcran(); B.actif = false;
+    const ej = A.etatJour(E, aujourdhui());
+    flash = B.mode === "micro" ? `Micro-pause comptée : ${ej.micro} aujourd'hui.` : `Cohérence enregistrée : ${ej.coherences} sur 3 à l'objectif aujourd'hui.`;
+    montrer("accueil");
   }
 
   function image(){
@@ -466,21 +539,23 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     let mot = "", grand = "", detail = "", tenue = false;
     if (!p) { mot = "Terminé"; }
     else if (p.type === "prep"){ mot = "En place"; grand = String(Math.ceil(p.t1 - now)); detail = A.CONTENU[s.exo].lieu; }
-    else if (s.type === "couplee"){
+    else if (respire(s)){
       const coh = Math.max(0, now - tl.coherence.t0);
-      if (p.type === "libre" || B.gene){ mot = "Cohérence libre"; grand = fmt(coh); }
+      if (s.type === "coherence"){ mot = "Cohérence"; grand = fmt(coh); }
+      else if (p.type === "libre" || B.gene){ mot = "Cohérence libre"; grand = fmt(coh); }
       else { tenue = p.type === "tenue"; mot = tenue ? "Tenue" : "Relâche"; grand = `${p.r} / ${p.n}`; }
       detail = `${fmt(coh)} sur ${fmt(tl.coherence.objectif)}`;
     }
     else if (p.type === "rep"){ mot = p.mot; tenue = p.mot === "Tiens"; grand = `${p.r} / ${p.n}`; detail = `Série ${p.serie} sur ${p.series}`; }
     else if (p.type === "repos"){ mot = "Repos"; grand = String(Math.ceil(p.t1 - now)); detail = `Ensuite : série ${p.serie} sur ${p.series}`; }
+    else if (p.type === "machoire"){ mot = "Mâchoire au repos"; grand = String(Math.ceil(p.t1 - now)); detail = "Lèvres jointes, dents desserrées, langue au palais"; }
     else if (p.type === "tenue"){ mot = "Tiens"; tenue = true; grand = String(Math.ceil(p.t1 - now)); detail = `${p.label}, ${p.r} sur ${p.n}`; }
     else if (p.type === "relache"){ mot = "Relâche"; grand = String(Math.ceil(p.t1 - now)); detail = p.label; }
     else if (p.type === "transition"){ mot = s.exo === "iso" ? "Change de direction" : "Change de côté"; grand = String(Math.ceil(p.t1 - now)); detail = `Ensuite : ${p.label}`; }
     const m = $("#sMot"); if (m.textContent !== mot) m.textContent = mot; m.classList.toggle("tenue", tenue);
     if ($("#sGrand").textContent !== grand) $("#sGrand").textContent = grand;
     if ($("#sDetail").textContent !== detail) $("#sDetail").textContent = detail;
-    if (s.type === "couplee") rendreRespiration(now);
+    if (respire(s)) rendreRespiration(now);
   }
   function rendreRespiration(now){
     const r = B.tl.respi, disc = $("#disc"), halo = $("#halo"), orb = $("#orb");
@@ -514,8 +589,11 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     }
   }
   function arreterBloc(){
-    if (!confirm("Arrêter le bloc ? Il ne sera pas enregistré.")) return false;
-    if (B.tl && seg().type === "couplee") noterCoherence(secondesCoherence());
+    const q = B.mode === "bloc" ? "Arrêter le bloc ? Il ne sera pas enregistré."
+      : B.mode === "coherence" ? "Arrêter la cohérence ? La durée faite est enregistrée ; elle compte si elle atteint l'objectif."
+      : "Arrêter la micro-pause ? Elle ne sera pas comptée.";
+    if (!confirm(q)) return false;
+    if (B.tl && respire(seg())) noterCoherence(secondesCoherence());
     arreterMinuterie(); B.tl = null; B.actif = false;
     fermerCtx(); libererEcran();
     montrer("accueil");
@@ -569,41 +647,125 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   $("#fAccueil").addEventListener("click", () => montrer("accueil"));
 
   // ---------- accueil ----------
+  const NOMS = { matin: "Matin", midi: "Midi", soir: "Soir" };
+  const CE = { matin: "Ce matin", midi: "Ce midi", soir: "Ce soir" };
   function rendreAccueil(){
-    const d = new Date(), date = A.dateLocale(d), r = A.resumeJour(E, date);
+    const d = new Date(), date = A.dateLocale(d), h = A.heureLocale(d);
     $("#dateJour").textContent = d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-    $("#descEtape").textContent = A.descriptionEtape(E);
-    $("#series").textContent = `Blocs propres de suite : tenues ${E.serie.tenues} sur 3, Y ${E.serie.y} sur 3.`;
-    $("#blocFait").hidden = !r.bloc;
-    if (r.bloc) $("#blocFait").textContent = r.bloc.gene ? `Bloc fait à ${r.bloc.h}, avec gêne.` : `Bloc fait à ${r.bloc.h}.`;
-    $("#lancer").textContent = r.bloc ? "Refaire un bloc (ne compte pas)" : "Commencer le bloc";
-    $("#lancer").classList.toggle("primaire", !r.bloc);
-    $("#resumeJour").textContent = `${r.bloc ? "Bloc fait" : "Bloc à faire"}. Cohérences à l'objectif : ${r.coherences}.`;
+    rendreJourProg(date);
+    $("#flash").hidden = !flash; $("#flash").textContent = flash; flash = "";
+
+    const a = A.actionDuJour(E, date, h), ej = A.etatJour(E, date), min = Math.round(E.reglages.objectif / 60);
+    const btn = $("#aLancer"), sous = $("#aSous");
+    sous.hidden = a.type !== "bloc"; $("#aSeries").hidden = a.type !== "bloc"; btn.hidden = !a.type;
+    if (a.type === "bloc"){
+      $("#aTitre").textContent = `${CE[a.creneau]} : bloc nuque, environ 10 min`;
+      sous.textContent = A.descriptionEtape(E);
+      $("#aPourquoi").textContent = "Endurance des muscles profonds du cou et de ceux qui tiennent les omoplates. Compte comme la cohérence du soir. Après PALIER ou un jour sans séance, jamais juste avant.";
+      $("#aSeries").textContent = `Blocs propres de suite : tenues ${E.serie.tenues} sur 3, Y ${E.serie.y} sur 3.`;
+      btn.textContent = "Commencer le bloc"; btn.dataset.mode = "bloc";
+    } else if (a.type === "coherence"){
+      $("#aTitre").textContent = `${CE[a.creneau]} : cohérence cardiaque, ${min} min`;
+      $("#aPourquoi").textContent = "Respiration lente par le ventre : une respiration haute fait travailler les muscles du cou à chaque inspiration.";
+      btn.textContent = "Commencer la cohérence"; btn.dataset.mode = "coherence";
+    } else if (a.suite){
+      $("#aTitre").textContent = `Cohérence ${a.creneau === "matin" ? "du matin" : "de midi"} faite`;
+      $("#aPourquoi").textContent = `Prochaine : ${a.suite.creneau === "midi" ? "cohérence de midi" : "bloc nuque du soir"}, à partir de ${a.suite.heure} h. D'ici là, micro-pauses au bureau.`;
+    } else {
+      $("#aTitre").textContent = "Journée terminée";
+      $("#aPourquoi").textContent = ej.coherences >= 3 ? "Bloc et trois cohérences faits." : "Rien d'autre à faire ce soir.";
+    }
+
+    const ordre = ["matin", "midi", "soir"], iNow = ordre.indexOf(a.creneau);
+    const etat = (k, i) => {
+      const coh = ej[k] ? `cohérence faite à ${ej[k]}` : i < iNow ? "pas de cohérence" : i === iNow ? "cohérence à faire" : "cohérence à venir";
+      if (k !== "soir") return coh;
+      const bloc = ej.bloc ? `bloc fait à ${ej.bloc.h}${ej.bloc.gene ? ", avec gêne" : ""}` : i === iNow ? "bloc à faire" : "bloc à venir";
+      return ej.bloc && !ej[k] && i === iNow ? `${bloc}, cohérence à faire` : ej[k] ? `${bloc}, ${coh}` : bloc;
+    };
+    const ul = $("#etatJour"); ul.innerHTML = "";
+    const ligne = (cle, val, now) => {
+      const li = document.createElement("li"); if (now) li.className = "maintenant";
+      const k = document.createElement("span"); k.className = "cle"; k.textContent = cle;
+      const v = document.createElement("span"); v.textContent = val;
+      li.append(k, v); ul.appendChild(li);
+    };
+    ordre.forEach((k, i) => ligne(NOMS[k], etat(k, i), i === iNow));
+    ligne("Micro-pauses", String(ej.micro), false);
+
+    const box = $("#autres"); box.innerHTML = "";
+    [["micro", "Micro-pause"], ["coherence", "Cohérence"], ["bloc", ej.bloc ? "Refaire un bloc (ne compte pas)" : "Bloc nuque"]]
+      .filter(([m]) => m !== a.type)
+      .forEach(([m, t]) => { const b = document.createElement("button"); b.className = "bouton"; b.textContent = t; b.addEventListener("click", () => lancer(m)); box.appendChild(b); });
+
     $("#version").textContent = `Version ${A.VERSION}`;
   }
+  function rendreJourProg(date){
+    const box = $("#jourProg"); box.innerHTML = "";
+    const j = A.jourProgramme(E.reglages.debut, date);
+    if (!j){
+      box.append("Date de départ du programme (J0) à régler : ");
+      const b = document.createElement("button"); b.className = "lien"; b.textContent = "Réglages";
+      b.addEventListener("click", () => montrer("reglages")); box.appendChild(b);
+      return;
+    }
+    if (j.n < 0){ box.textContent = `Le programme commence ${fmtDate(E.reglages.debut)}.`; return; }
+    let t = `Jour ${j.n} sur ${j.duree}.`;
+    if (!j.releve) t += " Six semaines passées : le relevé J42 dit si le programme marche.";
+    else if (j.releve.aujourdhui) t += ` Relevé J${j.releve.j} aujourd'hui, hors de l'app.`;
+    else t += ` Prochain relevé : J${j.releve.j}, ${fmtDate(j.releve.date)}.`;
+    box.textContent = t;
+  }
+  (function brefLu(){
+    const d = $("#bref"), CLE_BREF = "aplomb:bref-lu";
+    let lu = false; try { lu = localStorage.getItem(CLE_BREF) === "1"; } catch {}
+    d.open = !lu;
+    d.addEventListener("toggle", () => { if (!d.open) try { localStorage.setItem(CLE_BREF, "1"); } catch {} });
+  })();
+  $("#aLancer").addEventListener("click", e => lancer(e.currentTarget.dataset.mode));
 
-  // ---------- vidéos ----------
-  (function rendreVideos(){
-    const groupes = [
-      ["Étape 1", ["ccf", "y1", "elev", "sousocc"]],
-      ["Étape 2", ["tete", "y2"]],
-      ["Étape 3", ["iso"]],
-      ["Micro-pause", ["micro"]]
-    ];
-    const box = $("#listeVideos");
-    groupes.forEach(([titre, ids]) => {
+  // ---------- exercices et fiches ----------
+  const GROUPES = [
+    ["Chaque jour", ["coh", "micro"], 0],
+    ["Étape 1", ["ccf", "y1"], 1],
+    ["Étape 2", ["tete", "y2"], 2],
+    ["Étape 3", ["iso"], 3],
+    ["Étirements, à chaque bloc", ["elev", "sousocc"], 0]
+  ];
+  function rendreExercices(){
+    const box = $("#listeExos"); box.innerHTML = "";
+    GROUPES.forEach(([titre, ids, etape]) => {
       const g = document.createElement("div"); g.className = "groupe";
-      const h = document.createElement("h3"); h.textContent = titre;
+      const h = document.createElement("h3"); h.textContent = etape && etape === E.etape ? `${titre}, ton étape` : titre;
       const ul = document.createElement("ul"); ul.className = "liste";
       ids.forEach(id => {
-        const c = A.CONTENU[id], li = document.createElement("li"), a = document.createElement("a");
-        a.href = c.video; a.target = "_blank"; a.rel = "noopener"; a.textContent = c.titre;
-        const s = document.createElement("span"); s.className = "muted petit"; s.textContent = c.videoLibelle || "Vidéo Physitrack";
-        li.append(a, s); ul.appendChild(li);
+        const c = A.CONTENU[id], li = document.createElement("li");
+        const b = document.createElement("button"); b.className = "lien"; b.textContent = c.titre;
+        b.addEventListener("click", () => ouvrirFiche(id, "exercices"));
+        const sp = document.createElement("span"); sp.className = "muted petit"; sp.textContent = c.lieu;
+        li.append(b, sp); ul.appendChild(li);
       });
       g.append(h, ul); box.appendChild(g);
     });
-  })();
+  }
+  let retourFiche = "exercices";
+  function ouvrirFiche(id, retour){
+    retourFiche = retour;
+    const c = A.CONTENU[id];
+    $("#xTitre").textContent = c.titre; $("#xLieu").textContent = c.lieu; $("#xBut").textContent = c.but;
+    const s = id === "coh" ? A.planCoherence(E)[0] : id === "micro" ? A.planMicro()[0] : A.planBloc(E, bd()).find(x => x.exo === id);
+    $("#xDosage").hidden = !s;
+    if (s) $("#xDosage").textContent = (id === "coh" || id === "micro" ? "" : "Dans ton bloc : ") + A.dosage(s);
+    const remplir = (sel, items) => { const l = $(sel); l.innerHTML = ""; items.forEach(t => { const li = document.createElement("li"); li.textContent = t; l.appendChild(li); }); };
+    remplir("#xEtapes", c.etapes); remplir("#xErreurs", c.erreurs);
+    $("#xSensation").textContent = c.sensation;
+    $("#xVideoBloc").hidden = !c.video; $("#xSansVideo").hidden = !!c.video;
+    if (c.video){ $("#xVideo").href = c.video; $("#xVideo").textContent = "Voir la vidéo validée (nouvel onglet)"; $("#xSource").textContent = c.source; }
+    $("#xRetour").textContent = retour === "porte" ? "Retour à l'exercice" : "Retour";
+    montrer("fiche");
+  }
+  $("#xRetour").addEventListener("click", () => montrer(retourFiche));
+  $("#pFiche").addEventListener("click", () => ouvrirFiche(seg().exo, "porte"));
 
   // ---------- journal ----------
   function rendreJournal(){
@@ -619,6 +781,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
       const parts = [];
       if (j.bloc) parts.push(j.bloc.gene ? `Bloc étape ${j.bloc.etape} à ${j.bloc.h}, gêne.` : `Bloc étape ${j.bloc.etape} à ${j.bloc.h} : tenues ${j.bloc.tenuesPropres ? "propres" : "non propres"}, Y ${j.bloc.yPropres ? "propres" : "non propres"}.`);
       if (j.coherences && j.coherences.length) parts.push(`Cohérences : ${j.coherences.map(c => `${c.h} (${fmt(c.s)}${c.ok ? "" : ", sous l'objectif"})`).join(", ")}.`);
+      if (j.micro) parts.push(`Micro-pauses : ${j.micro}.`);
       const p = document.createElement("span"); p.className = "muted petit"; p.textContent = parts.join(" ") || "Rien.";
       li.append(t, p); ul.appendChild(li);
     });
@@ -649,6 +812,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     document.querySelectorAll("#rObjectif button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.v === R.objectif)));
     document.querySelectorAll("#rSons button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === R.son)));
     $("#rHauteur").value = R.hauteur; $("#rVolume").value = R.volume;
+    $("#rDebut").value = R.debut || ""; $("#rMidi").value = R.creneaux.midi; $("#rSoir").value = R.creneaux.soir;
     $("#rHauteurVal").textContent = R.hauteur ? `(${R.hauteur > 0 ? "+" : ""}${R.hauteur})` : "";
   }
   [180, 240, 300, 360].forEach(v => {
@@ -665,6 +829,14 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     const v = Math.round(+e.target.value);
     E.reglages.tempo = Number.isFinite(v) ? Math.min(80, Math.max(40, v)) : 55; ecrire(); rendreReglages();
   });
+  $("#rDebut").addEventListener("change", e => { E.reglages.debut = /^\d{4}-\d{2}-\d{2}$/.test(e.target.value) ? e.target.value : null; ecrire(); rendreReglages(); });
+  function changerCreneau(cle, v){
+    const c = { ...E.reglages.creneaux, [cle]: Math.round(+v) };
+    if (Number.isInteger(c.midi) && Number.isInteger(c.soir) && c.midi > 0 && c.midi < c.soir && c.soir < 24){ E.reglages.creneaux = c; ecrire(); }
+    rendreReglages();
+  }
+  $("#rMidi").addEventListener("change", e => changerCreneau("midi", e.target.value));
+  $("#rSoir").addEventListener("change", e => changerCreneau("soir", e.target.value));
   $("#rHauteur").addEventListener("input", e => { E.reglages.hauteur = +e.target.value; ecrire(); rendreReglages(); });
   $("#rHauteur").addEventListener("change", () => apercu(false));
   $("#rVolume").addEventListener("input", e => { E.reglages.volume = +e.target.value; ecrire(); });
@@ -687,6 +859,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   $("#ouvrirArret").addEventListener("click", () => {
     if (!$("#seance").hidden && !B.pause) basculerPause();
     $("#arretStop").hidden = !B.actif;
+    $("#arretStop").textContent = B.mode === "bloc" ? "Arrêter le bloc" : "Arrêter";
     dlg.showModal();
   });
   $("#arretFermer").addEventListener("click", () => dlg.close());
@@ -695,7 +868,6 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   // ---------- liaisons ----------
   $("#marque").addEventListener("click", () => montrer("accueil"));
   document.querySelectorAll("[data-aller]").forEach(b => b.addEventListener("click", () => montrer(b.dataset.aller)));
-  $("#lancer").addEventListener("click", lancerBloc);
   $("#pret").addEventListener("click", pret);
   $("#pGeneBtn").addEventListener("click", noterGene);
   $("#sGene").addEventListener("click", noterGene);

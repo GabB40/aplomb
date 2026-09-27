@@ -3,94 +3,199 @@
 (function (racine) {
   "use strict";
 
-  const VERSION = "0.1.0";
+  const VERSION = "0.2.0";
   const MODELE = 1;
   const PREP = 5;            // secondes de mise en place avant chaque exercice minuté
   const TRANSITION = 5;      // secondes entre deux côtés ou deux directions
   const REPOS_SERIES = 30;   // secondes entre deux séries de Y
   const CYCLE_BLOC = 10;     // temps par cycle dans le bloc (5 inspiration, 5 expiration, verrouillé)
   const PHASE_BLOC = 5;
+  const MACHOIRE = 8;        // secondes de mâchoire au repos en début de micro-pause
+  const MICRO = { reps: 5, tenue: 5, repos: 3 };
+  const RELEVES = [0, 7, 21, 42];
+  const CRENEAUX_DEFAUT = { midi: 11, soir: 15 };
 
   // ---------- contenu (aligné sur docs/programme.md) ----------
+  // Fiches : but, position (lieu), étapes, sensation, erreurs, vidéo validée (docs/videos.md).
   const CONTENU = {
     ccf: {
       titre: "Flexion cranio-cervicale",
       lieu: "Allongé sur le dos, serviette pliée sous la tête",
-      consignes: [
-        "Petit « oui » qui allonge l'arrière du cou ; l'arrière de la tête ne quitte pas la serviette.",
+      but: "Entraîner en endurance les fléchisseurs profonds du cou, qui tiennent la tête sans l'aide des muscles de surface.",
+      etapes: [
         "Langue posée au palais, dents desserrées.",
-        "Deux doigts sur le SCOM : s'il durcit, trop de force, réduis l'amplitude.",
-        "Respiration jamais bloquée pendant la tenue."
+        "Deux doigts sur le SCOM, le muscle en corde sur le côté du cou.",
+        "Petit « oui » : le menton descend légèrement, l'arrière du cou s'allonge.",
+        "L'arrière de la tête ne quitte pas la serviette.",
+        "Tiens en respirant, puis relâche."
       ],
-      video: "https://ca.physitrack.com/home-exercise-video/deep-neck-flexors-in--supine"
+      sensation: "Un effort léger. Le SCOM reste relâché sous les doigts : s'il durcit, c'est trop de force, réduis l'amplitude.",
+      erreurs: [
+        "La tête décolle de la serviette.",
+        "Le menton écrase vers la poitrine.",
+        "Le SCOM durcit sous les doigts.",
+        "La respiration se bloque pendant la tenue."
+      ],
+      video: "https://www.physioactif.com/videos-dexercise/flechisseurs-profonds-du-cou",
+      source: "Physioactif"
     },
     tete: {
       titre: "Menton rentré, tête décollée",
       lieu: "Allongé sur le dos",
-      consignes: [
-        "Menton rentré d'abord.",
-        "Tête soulevée en le gardant rentré, redescente sans le relâcher.",
+      but: "Les mêmes muscles profonds, avec le poids de la tête en plus.",
+      etapes: [
         "Langue posée au palais, dents desserrées.",
-        "Respiration jamais bloquée pendant la tenue."
+        "Menton rentré d'abord.",
+        "Tête soulevée en gardant le menton rentré.",
+        "Tiens en respirant.",
+        "Redescends sans relâcher le menton, puis relâche une fois la tête posée."
       ],
-      video: "https://us.physitrack.com/home-exercise-video/chin-tuck%252c-head-lift"
+      sensation: "Le SCOM reste relâché sous les doigts pendant toute la tenue.",
+      erreurs: [
+        "Le menton ressort quand la tête monte ou redescend.",
+        "Le SCOM durcit.",
+        "La respiration se bloque."
+      ],
+      video: "https://www.youtube.com/watch?v=WGPrYtMe9ug",
+      source: "YouTube"
     },
     y1: {
       titre: "Y au sol, coudes fléchis",
-      lieu: "Sur le ventre, front sur une serviette",
-      consignes: [
-        "Mouvement court qui part des omoplates : en arrière et légèrement vers le bas.",
+      lieu: "À plat ventre, front posé sur une serviette pliée",
+      but: "Endurance du bas des trapèzes, qui tiennent l'omoplate en arrière et en bas.",
+      etapes: [
+        "Bras au-dessus de la tête, écartés en Y, coudes fléchis à environ 45°.",
         "Pouces vers le plafond.",
-        "Le buste ne décolle pas."
+        "Le mouvement part des omoplates : elles glissent en arrière et légèrement vers le bas.",
+        "Les bras se décollent de quelques centimètres ; petite tenue en haut.",
+        "Redescends en contrôlant. La tête reste posée du début à la fin."
       ],
-      video: "https://au.physitrack.com/home-exercise-video/prone-arm-lift-with-elbows-bent---lower-trapezius"
+      sensation: "Le travail se sent au bas des omoplates ; les épaules restent loin des oreilles.",
+      erreurs: [
+        "Le buste ou la tête décollent du sol, même un peu.",
+        "La tête se relève, le regard part vers l'avant.",
+        "Les épaules montent vers les oreilles."
+      ],
+      video: "https://au.physitrack.com/home-exercise-video/prone-arm-lift-with-elbows-slightly-bent-%28lower-trapezius%29",
+      source: "Physitrack, en anglais"
     },
     y2: {
       titre: "Y au sol, bras tendus",
-      lieu: "Sur le ventre, front sur une serviette",
-      consignes: [
-        "Mouvement court qui part des omoplates : en arrière et légèrement vers le bas.",
+      lieu: "À plat ventre, front posé sur une serviette pliée",
+      but: "Le bas des trapèzes avec un levier plus long, donc plus de travail.",
+      etapes: [
+        "Bras tendus au-dessus de la tête, en Y, comme des aiguilles sur 10 h 10.",
         "Pouces vers le plafond.",
-        "Le buste ne décolle pas."
+        "Le mouvement part des omoplates : elles glissent en arrière et légèrement vers le bas.",
+        "Les bras se décollent de quelques centimètres ; petite tenue en haut.",
+        "Redescends en contrôlant. La tête reste posée du début à la fin."
       ],
-      video: "https://us.physitrack.com/home-exercise-video/shoulder-y-raise-in-prone"
+      sensation: "Le travail se sent au bas des omoplates ; les épaules restent loin des oreilles.",
+      erreurs: [
+        "Le buste ou la tête décollent du sol, même un peu.",
+        "La tête se relève, le regard part vers l'avant.",
+        "Les épaules montent vers les oreilles.",
+        "Les coudes se plient : c'est la version de l'étape 1."
+      ],
+      video: "https://www.youtube.com/watch?v=sC-AyKwTiLA",
+      source: "YouTube"
     },
     iso: {
       titre: "Isométries en quatre directions",
       lieu: "Assis",
-      consignes: [
-        "Main contre la tête, menton rétracté.",
-        "Pression graduelle, sans mouvement, intensité modérée.",
-        "Respiration jamais bloquée."
+      but: "Renforcer le cou dans les quatre directions, sans le bouger.",
+      etapes: [
+        "Menton rétracté ; main contre la tête : sur le front, derrière la tête, puis sur chaque tempe.",
+        "La tête pousse contre la main, progressivement, sans aucun mouvement.",
+        "Intensité modérée ; tiens en respirant.",
+        "Relâche doucement."
+      ],
+      sensation: "Un effort modéré ; la tête reste immobile.",
+      erreurs: [
+        "La tête bouge.",
+        "La pression arrive d'un coup.",
+        "La respiration se bloque."
       ],
       video: "https://www.chiropractic.ca/wp-content/uploads/2017/08/Neck-Motor-Control-Strengthening-Instructions-FR-1-12.pdf",
-      videoLibelle: "Guide PDF"
+      source: "Guide PDF de l'Association chiropratique canadienne"
     },
     elev: {
       titre: "Étirement de l'élévateur de la scapula",
       lieu: "Assis",
-      consignes: [
-        "Main du côté étiré dans le dos.",
-        "L'autre main tire la tête en avant et vers le côté opposé, jusqu'à l'étirement de la base du crâne à l'omoplate.",
-        "Traction douce."
+      but: "Étirer le muscle qui relie le haut de l'omoplate aux premières vertèbres du cou.",
+      etapes: [
+        "Pour étirer le côté droit : main droite dans le dos, dos de la main posé au bas du dos.",
+        "Tourne la tête vers la gauche, puis penche-la en avant, nez vers l'aisselle gauche.",
+        "Main gauche sur l'arrière ou le haut de la tête : elle accompagne le mouvement, traction douce.",
+        "L'épaule droite reste basse. Tiens sans rebond, puis change de côté."
       ],
-      video: "https://fr.physitrack.com/home-exercise-video/%C3%89tirement-des-%C3%A9l%C3%A9vateurs-de-la-scapula-"
+      sensation: "Étirement de la base du crâne jusqu'à l'omoplate, du côté de la main dans le dos.",
+      erreurs: [
+        "La tête s'incline seulement sur le côté, visage vers l'avant : c'est un autre étirement, celui du trapèze supérieur.",
+        "Le nez ou le menton partent vers le plafond.",
+        "La main du côté étiré n'est pas dans le dos.",
+        "Traction forte, à-coups ou rebonds."
+      ],
+      video: "https://fr.physitrack.com/home-exercise-video/%C3%89tirement-du-muscle-%C3%A9l%C3%A9vateur-de-l%27omoplate-%28levator-scapula%29",
+      source: "Physitrack"
     },
     sousocc: {
       titre: "Étirement des sous-occipitaux",
       lieu: "Assis",
-      consignes: [
-        "Menton rentré, puis léger enroulement vers l'avant, avec la rotation décrite par la vidéo.",
-        "Ne pas reprendre les exercices de fin de la vidéo qui passent la tête en extension."
+      but: "Étirer les petits muscles profonds situés sous le crâne, entre l'arrière de la tête et le haut du cou.",
+      etapes: [
+        "Pour étirer le côté droit : paume de la main droite sur l'oreille droite, pouce à l'arrière du cou, juste sous le crâne.",
+        "Main gauche sur le haut du crâne, un peu en arrière.",
+        "Tourne la tête vers la gauche, environ 45°.",
+        "Rentre le menton, puis enroule légèrement la tête vers l'avant.",
+        "Tiens, relâche, recommence ; changer un peu l'angle de rotation est permis. Puis l'autre côté."
       ],
-      video: "https://www.masseur-kinesitherapeute-lanneau-thierry.fr/articles/cervicalgie/article/comment-etirer-le-cou-etirement-des-muscles-principaux-conseil-de-kine",
-      videoLibelle: "Article de T. Lanneau, kiné"
+      sensation: "Étirement sous le crâne, à l'arrière, du côté de la main posée sur l'oreille.",
+      erreurs: [
+        "La tête part en arrière, nez ou menton vers le plafond, à n'importe quel moment.",
+        "L'oreille descend vers l'épaule sans rotation ni enroulement.",
+        "Traction forte ou à-coups."
+      ],
+      video: "https://www.youtube.com/embed/YleLF-g2544?start=72&end=188",
+      source: "T. Lanneau, kiné, de 1:12 à 3:08"
     },
     micro: {
-      titre: "Rentrée de menton assise",
-      lieu: "Assis, au bureau",
-      consignes: [],
-      video: "https://fr.physitrack.com/home-exercise-video/r%C3%A9traction-cervicale-active"
+      titre: "Flexion cranio-cervicale assise",
+      lieu: "Assis droit, au bureau",
+      but: "Refaire dans la journée le geste du bloc, là où la tête avance : au bureau.",
+      etapes: [
+        "Mâchoire au repos : lèvres jointes, dents desserrées, langue au palais.",
+        "Deux doigts sur le SCOM.",
+        "Petit « oui » : le menton descend légèrement, l'arrière du cou s'allonge, la tête ne recule ni n'avance.",
+        "Tiens 5 s en respirant, puis relâche."
+      ],
+      sensation: "Le même effort léger que dans le bloc ; le SCOM reste relâché.",
+      erreurs: [
+        "Le menton va vers la poitrine : tout le cou plie.",
+        "La tête recule (c'est une rétraction) ou avance.",
+        "La tête part en arrière.",
+        "La tête pousse contre un appui ou une main : c'est l'isométrie de l'étape 3."
+      ],
+      video: "https://www.physioactif.com/videos-dexercise/controle-de-la-flexion-cranio-vertebrale",
+      source: "Physioactif"
+    },
+    coh: {
+      titre: "Cohérence cardiaque",
+      lieu: "Assis ou allongé",
+      but: "Respirer lentement avec le ventre : une respiration haute fait travailler le SCOM, les scalènes et le haut des trapèzes à chaque inspiration.",
+      etapes: [
+        "Mâchoire au repos : lèvres jointes, dents desserrées, langue au palais.",
+        "Une main sur le ventre, l'autre en haut de la poitrine.",
+        "Le ventre monte à l'inspiration, la poitrine bouge peu.",
+        "Suis le disque et les bips : il grandit à l'inspiration et diminue à l'expiration."
+      ],
+      sensation: "Épaules et cou relâchés.",
+      erreurs: [
+        "Les épaules montent à l'inspiration.",
+        "La poitrine se soulève plus que le ventre."
+      ],
+      video: null,
+      source: null
     }
   };
 
@@ -111,7 +216,7 @@
       serie: { tenues: 0, y: 0 },
       prog: { tete: { tenue: "phase", reps: 5 }, y: { reps: 8 } },
       jours: {},
-      reglages: { tempo: 55, objectif: 300, son: "bip", hauteur: 0, volume: 0.7 }
+      reglages: { tempo: 55, objectif: 300, son: "bip", hauteur: 0, volume: 0.7, debut: null, creneaux: clone(CRENEAUX_DEFAUT) }
     };
   }
   function migrer(obj) {
@@ -124,6 +229,10 @@
     if (obj.prog && obj.prog.y && [8, 10, 12].includes(obj.prog.y.reps)) e.prog.y = { reps: obj.prog.y.reps };
     if (obj.jours && typeof obj.jours === "object") e.jours = clone(obj.jours);
     if (obj.reglages && typeof obj.reglages === "object") e.reglages = { ...e.reglages, ...obj.reglages };
+    const c = e.reglages.creneaux;
+    e.reglages.creneaux = c && Number.isInteger(c.midi) && Number.isInteger(c.soir) && c.midi > 0 && c.midi < c.soir && c.soir < 24
+      ? { midi: c.midi, soir: c.soir } : clone(CRENEAUX_DEFAUT);
+    if (!(typeof e.reglages.debut === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.reglages.debut))) e.reglages.debut = null;
     return e;
   }
 
@@ -143,7 +252,11 @@
     s.push({ type: "tenues", exo: "sousocc", holds: ["Côté gauche", "Côté gauche", "Côté gauche", "Côté droit", "Côté droit", "Côté droit"].map(label => ({ label, tenue: 6, repos: 3 })) });
     return s;
   }
+  function planCoherence(etat) { return [{ type: "coherence", exo: "coh", objectif: etat.reglages.objectif }]; }
+  function planMicro() { return [{ type: "micro", exo: "micro" }]; }
   function dosage(seg) {
+    if (seg.type === "coherence") return `${Math.round(seg.objectif / 60)} min, 5 temps d'inspiration et 5 d'expiration`;
+    if (seg.type === "micro") return `${MACHOIRE} s de mâchoire au repos, puis ${MICRO.reps} tenues de ${MICRO.tenue} s séparées par ${MICRO.repos} s de relâchement`;
     if (seg.type === "couplee") return `${seg.reps} tenues d'${seg.tenue === "cycle" ? "un cycle" : "une phase"}, alternées avec un relâchement, dans une cohérence de ${Math.round(seg.objectif / 60)} min`;
     if (seg.type === "reps") return `${seg.series} séries de ${seg.reps}, ${REPOS_SERIES} s de repos entre les séries`;
     if (seg.exo === "iso") return "5 tenues d'une phase par direction, 4 directions";
@@ -238,8 +351,28 @@
     return { duree: t + 1.6, evenements: ev, plages: pl };
   }
 
+  function timelineMicro() {
+    const ev = [], pl = [];
+    prep(ev, pl);
+    let t = PREP;
+    pl.push({ t0: t, t1: t + MACHOIRE, type: "machoire" });
+    t += MACHOIRE;
+    for (let r = 1; r <= MICRO.reps; r++) {
+      ev.push({ t, son: "tenue" });
+      pl.push({ t0: t, t1: t + MICRO.tenue, type: "tenue", label: "Hochement", r, n: MICRO.reps });
+      t += MICRO.tenue;
+      const dernier = r === MICRO.reps;
+      ev.push({ t, son: dernier ? "fin" : "relache" });
+      if (!dernier) { pl.push({ t0: t, t1: t + MICRO.repos, type: "relache", label: "Hochement" }); t += MICRO.repos; }
+    }
+    return { duree: t + 1.6, evenements: ev, plages: pl };
+  }
+
   function timeline(seg, bd) {
-    const tl = seg.type === "couplee" ? timelineCouplee(seg, bd) : seg.type === "reps" ? timelineReps(seg, bd) : timelineTenues(seg);
+    const tl = seg.type === "couplee" ? timelineCouplee(seg, bd)
+      : seg.type === "coherence" ? timelineCouplee({ ...seg, reps: 0 }, bd)
+      : seg.type === "micro" ? timelineMicro()
+      : seg.type === "reps" ? timelineReps(seg, bd) : timelineTenues(seg);
     tl.evenements.sort((a, b) => a.t - b.t);
     return tl;
   }
@@ -254,6 +387,48 @@
     jour(e, date).coherences.push({ h, s: Math.round(s), ok: s >= e.reglages.objectif - 0.5 });
     return e;
   }
+  function ajouterMicro(etat, date) {
+    const e = clone(etat), j = jour(e, date);
+    j.micro = (j.micro || 0) + 1;
+    return e;
+  }
+
+  // ---------- journée : créneaux et action du moment ----------
+  const minutes = h => { const [a, b] = h.split(":").map(Number); return a * 60 + b; };
+  function creneauDe(h, c) { const m = minutes(h); return m < c.midi * 60 ? "matin" : m < c.soir * 60 ? "midi" : "soir"; }
+  // Cohérences à l'objectif rangées par créneau (heure de la première), bloc, micro-pauses.
+  function etatJour(etat, date) {
+    const j = etat.jours[date] || { coherences: [], micro: 0 };
+    const out = { matin: null, midi: null, soir: null, bloc: j.bloc || null, micro: j.micro || 0, coherences: 0 };
+    for (const x of j.coherences || []) {
+      if (!x.ok) continue;
+      out.coherences++;
+      const k = creneauDe(x.h, etat.reglages.creneaux);
+      if (!out[k]) out[k] = x.h;
+    }
+    return out;
+  }
+  // type : "bloc", "coherence" ou null ; suite : prochain créneau quand celui-ci est fait (hors soir).
+  function actionDuJour(etat, date, h) {
+    const c = etat.reglages.creneaux, cr = creneauDe(h, c), ej = etatJour(etat, date);
+    if (cr === "soir") return { creneau: cr, type: !ej.bloc ? "bloc" : !ej.soir ? "coherence" : null, suite: null };
+    if (!ej[cr]) return { creneau: cr, type: "coherence", suite: null };
+    return { creneau: cr, type: null, suite: cr === "matin" ? { creneau: "midi", heure: c.midi } : { creneau: "soir", heure: c.soir } };
+  }
+
+  // ---------- jour du programme et relevés ----------
+  const versUTC = d => { const [y, m, j] = d.split("-").map(Number); return Date.UTC(y, m - 1, j); };
+  function ajouterJours(d, n) {
+    const x = new Date(versUTC(d) + n * 864e5);
+    return `${x.getUTCFullYear()}-${deux(x.getUTCMonth() + 1)}-${deux(x.getUTCDate())}`;
+  }
+  function jourProgramme(debut, date) {
+    if (!debut) return null;
+    const n = Math.round((versUTC(date) - versUTC(debut)) / 864e5);
+    const p = RELEVES.find(r => r >= n);
+    return { n, duree: RELEVES[RELEVES.length - 1], releve: p === undefined ? null : { j: p, date: ajouterJours(debut, p), aujourdhui: p === n } };
+  }
+
   function resumeJour(etat, date) {
     const j = etat.jours[date] || { coherences: [], micro: 0 };
     return { coherences: j.coherences.filter(c => c.ok).length, bloc: j.bloc || null, micro: j.micro || 0 };
@@ -312,9 +487,10 @@
   }
 
   const API = {
-    VERSION, MODELE, PREP, TRANSITION, REPOS_SERIES, CONTENU, RESPIRATION, DIRECTIONS,
-    dateLocale, heureLocale, etatInitial, migrer, planBloc, dosage, timeline,
-    ajouterCoherence, resumeJour, finirBloc, propositions, accepter, descriptionEtape
+    VERSION, MODELE, PREP, TRANSITION, REPOS_SERIES, MACHOIRE, MICRO, RELEVES, CONTENU, RESPIRATION, DIRECTIONS,
+    dateLocale, heureLocale, etatInitial, migrer, planBloc, planCoherence, planMicro, dosage, timeline,
+    ajouterCoherence, ajouterMicro, resumeJour, etatJour, creneauDe, actionDuJour, jourProgramme, ajouterJours,
+    finirBloc, propositions, accepter, descriptionEtape
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   else racine.Aplomb = API;
