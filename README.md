@@ -16,6 +16,7 @@ URL : https://aplomb.s1t3.link
 | `docs/programme.md` | Contenu santé, source de vérité. Tout changement de contenu passe d'abord par lui. |
 | `docs/decisions.md` | Décisions prises et leur origine, modèle de données. |
 | `docs/videos.md` | Vidéos validées, critères de validation, liens écartés. |
+| `docs/handoff.md` | État de reprise de la dernière session : à lire en premier en début de conversation. |
 
 ## Structure
 
