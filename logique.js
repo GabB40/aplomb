@@ -3,7 +3,7 @@
 (function (racine) {
   "use strict";
 
-  const VERSION = "0.4.0";
+  const VERSION = "0.4.1";
   const MODELE = 2;           // stockage : journal d'événements (v1 : état direct, migré à la lecture)
   const PREP = 5;            // secondes de mise en place avant chaque exercice minuté
   const TRANSITION = 5;      // secondes entre deux côtés ou deux directions

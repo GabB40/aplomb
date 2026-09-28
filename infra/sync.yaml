@@ -67,8 +67,11 @@ Resources:
           const TYPES = ["coherence", "micro", "bloc", "palier", "reglages"];
           const rep = (code, corps) => ({ statusCode: code, headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
           const egal = (a, b) => { const x = Buffer.from(String(a || "")), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
+          const entete = (ev, nom) => { const h = ev.headers || {}; const k = Object.keys(h).find(x => x.toLowerCase() === nom); return k ? h[k] : ""; };
           exports.handler = async (ev) => {
-            if (!egal(ev.headers && ev.headers["x-aplomb-cle"], CLE)) return rep(401, { erreur: "cle" });
+            const methode = (ev.requestContext && ev.requestContext.http && ev.requestContext.http.method) || ev.httpMethod || "";
+            if (methode === "OPTIONS") return { statusCode: 204 };
+            if (!egal(entete(ev, "x-aplomb-cle"), CLE)) return rep(401, { erreur: "cle" });
             let corps;
             try { corps = JSON.parse(ev.isBase64Encoded ? Buffer.from(ev.body || "", "base64").toString() : ev.body || "{}"); }
             catch { return rep(400, { erreur: "json" }); }
