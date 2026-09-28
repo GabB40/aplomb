@@ -136,13 +136,17 @@ restants sont sautés (flexion cranio-cervicale ou tête décollée, Y, isométr
 par les étirements. Le bloc suivant repart au **début** de l'étape précédente (à
 l'étape 1 : début de l'étape 1) ; les deux séries repartent à 0 et le Y à 8.
 
-## Micro-pause (au bureau, toutes les 30 à 60 min)
+## Micro-pause (toutes les 30 à 60 min en position assise prolongée)
 
 Environ 45 s après 5 s de mise en place : position de repos de la mâchoire (8 s), puis flexion
 cranio-cervicale assise, 5 tenues de 5 s séparées par 3 s de relâchement. C'est le petit « oui » du
 bloc, fait assis : la tête ne recule pas (ce n'est pas une rétraction) et ne pousse contre aucun appui
-(c'est l'isométrie vers l'arrière de l'étape 3). Comptée quand elle va au bout. Affichage
-« micro-pauses : n », sans objectif ni couleur d'échec.
+(c'est l'isométrie vers l'arrière de l'étape 3). Comptée quand elle va au bout.
+
+La règle vaut pour toute position assise prolongée : bureau, écran, canapé, voiture à l'arrêt
+(jamais en conduisant). Elle fixe un intervalle, pas un total : sur 7 h assis, cela fait 7 à 14
+micro-pauses, mais c'est la régularité qui compte. L'accueil affiche le nombre du jour, la règle et
+l'heure de la dernière, avec un rappel au-delà de 60 min ; sans couleur d'échec.
 
 ## Mâchoire
 
@@ -190,7 +194,7 @@ Erreurs à éviter :
 
 ### Flexion cranio-cervicale assise
 
-*Assis droit, au bureau.* Refaire dans la journée le geste du bloc, là où la tête avance : au bureau.
+*Assis droit.* Refaire dans la journée le geste du bloc, là où la tête avance : en position assise prolongée (bureau, écran, voiture à l'arrêt).
 
 Écran « Prêt » :
 

@@ -58,6 +58,9 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .etat-jour li{display:grid;grid-template-columns:7.5rem 1fr;gap:.6rem}
 .etat-jour .cle{color:var(--muted)}
 .etat-jour .maintenant .cle{color:var(--laiton);font-weight:600}
+.etat-jour .detail-jour{display:block;color:var(--muted);font-size:.88rem}
+.etat-jour .rappel{color:var(--laiton)}
+.synchro{margin-top:.2rem}
 .bref{margin-top:2rem}
 .bref summary{cursor:pointer;font-weight:600}
 .bref ul{margin:.8rem 0 0;padding-left:1.1rem;display:grid;gap:.45rem}
@@ -140,6 +143,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   <section id="accueil">
     <p class="muted" id="dateJour"></p>
     <p class="muted petit" id="jourProg"></p>
+    <p class="muted petit synchro" id="etatSync" hidden></p>
     <p class="flash" id="flash" role="status" hidden></p>
     <div class="bloc-jour" style="margin-top:1.2rem">
       <h2 id="aTitre"></h2>
@@ -159,7 +163,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
         <li>Six semaines, puis on juge. Ce qui manque d'abord, c'est l'endurance des muscles profonds du cou et de ceux qui tiennent les omoplates.</li>
         <li>Trois cohérences cardiaques par jour, matin, midi et soir, de 5 minutes par défaut.</li>
         <li>Un bloc nuque par jour, le soir, d'environ 9 minutes, après PALIER ou un jour sans séance, jamais juste avant. La cohérence du soir s'enchaîne ensuite, à part.</li>
-        <li>Au bureau, une micro-pause d'environ 45 secondes toutes les 30 à 60 minutes.</li>
+        <li>Une micro-pause d'environ 45 secondes toutes les 30 à 60 minutes dès que tu restes assis longtemps : bureau, écran, voiture à l'arrêt.</li>
         <li>Après 3 blocs propres de suite, l'app propose le palier suivant. En cas de gêne, le bloc suivant redescend.</li>
         <li>La tension ressentie se note hors de l'app à J0, J7, J21 et J42. Ce relevé et ton ressenti jugent le programme, pas le journal.</li>
       </ul>
@@ -274,7 +278,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     <ul class="liste" id="jJours"></ul>
     <div class="groupe">
       <h3>Données de cet appareil</h3>
-      <p class="muted petit" style="margin-top:.3rem">Chaque appareil garde son propre historique. L'export sert de sauvegarde et de transfert.</p>
+      <p class="muted petit" style="margin-top:.3rem">L'export sert de sauvegarde. L'import fusionne le fichier avec les données de cet appareil, sans rien effacer.</p>
       <div class="actions">
         <button class="bouton" id="exporter">Exporter</button>
         <button class="bouton" id="importer">Importer</button>
@@ -288,6 +292,13 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   <!-- réglages -->
   <section id="reglages" hidden>
     <h2>Réglages</h2>
+    <div class="groupe">
+      <h3>Synchronisation</h3>
+      <p class="muted petit" style="margin-top:.3rem">Les séances et les réglages du programme sont partagés entre tes appareils. Le son, le volume, le tempo et la hauteur restent propres à chaque appareil.</p>
+      <div class="reglage"><label for="rCle">Clé</label><input type="password" id="rCle" autocomplete="off" spellcheck="false" style="width:12rem;font:inherit;padding:.4rem .6rem;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--text)"></div>
+      <div class="actions"><button class="bouton" id="rCleOk">Enregistrer la clé</button><button class="bouton" id="rSyncNow">Synchroniser maintenant</button></div>
+      <p class="petit" id="rSyncEtat" style="margin-top:.6rem"></p>
+    </div>
     <div class="groupe">
       <h3>Programme</h3>
       <div class="reglage"><label for="rDebut">Date de départ (J0)</label><input type="date" id="rDebut"></div>
@@ -334,7 +345,8 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   </dialog>
 </main>
 
-<script src="logique.js?v=0.3.0"></script>
+<script src="config.js?v=0.4.0"></script>
+<script src="logique.js?v=0.4.0"></script>
 <script>
 (() => {
   "use strict";
@@ -343,15 +355,76 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   const CLE = "aplomb:etat";
 
   // ---------- stockage ----------
+  // S : journal d'événements stocké et synchronisé ; E : état dérivé, lu par l'interface.
   function lire(){
     let brut = null;
     try { brut = localStorage.getItem(CLE); } catch {}
-    if (!brut) return A.etatInitial();
-    try { return A.migrer(JSON.parse(brut)); }
-    catch { try { localStorage.setItem(CLE + ":illisible", brut); } catch {} return A.etatInitial(); }
+    if (!brut) return A.stockInitial();
+    try {
+      const obj = JSON.parse(brut);
+      if (obj && obj.v === 1) try { localStorage.setItem(CLE + ":v1", brut); } catch {}
+      return A.migrer(obj);
+    }
+    catch { try { localStorage.setItem(CLE + ":illisible", brut); } catch {} return A.stockInitial(); }
   }
-  function ecrire(){ try { localStorage.setItem(CLE, JSON.stringify(E)); } catch {} }
-  let E = lire();
+  function ecrire(){ try { localStorage.setItem(CLE, JSON.stringify(S)); } catch {} }
+  let S = lire(); ecrire();
+  let E = A.deriver(S);
+  function ajouter(type, champs, quand = new Date()){
+    S = A.ajouterEvenement(S, A.evenement(type, champs, quand)); ecrire(); E = A.deriver(S);
+    synchroniser();
+  }
+  function reglerLocal(k, v){ S = { ...S, local: { ...S.local, [k]: v } }; ecrire(); E = A.deriver(S); }
+
+  // ---------- synchronisation ----------
+  const API_SYNC = window.APLOMB_SYNC || null, CLE_SYNC = "aplomb:cle";
+  const lireCle = () => { try { return localStorage.getItem(CLE_SYNC) || ""; } catch { return ""; } };
+  (function cleDepuisLien(){
+    const m = location.hash.match(/(?:^#|&)cle=([0-9a-f]{32,})/);
+    if (!m) return;
+    try { localStorage.setItem(CLE_SYNC, m[1]); } catch {}
+    history.replaceState(null, "", location.pathname + location.search);
+  })();
+  let syncEnCours = false, syncRelance = false, syncEtat = "";
+  async function synchroniser(){
+    if (!API_SYNC || !lireCle()) { syncEtat = !API_SYNC ? "absente" : "sans-cle"; rendreEtatSync(); return; }
+    if (syncEnCours) { syncRelance = true; return; }
+    syncEnCours = true;
+    try {
+      const partis = A.enAttente(S);
+      const r = await fetch(API_SYNC, { method: "POST", headers: { "content-type": "application/json", "x-aplomb-cle": lireCle() }, body: JSON.stringify({ evenements: partis }) });
+      if (r.status === 401) syncEtat = "cle-refusee";
+      else if (!r.ok) syncEtat = "erreur";
+      else {
+        const d = await r.json();
+        S = A.fusionner(S, d.evenements, { envoyes: partis.map(e => e.id), maintenant: Date.now() }); ecrire(); E = A.deriver(S);
+        syncEtat = "ok";
+        if (!$("#accueil").hidden) rendreAccueil();
+        if (!$("#journal").hidden) rendreJournal();
+      }
+    } catch { syncEtat = "hors-ligne"; }
+    finally {
+      syncEnCours = false; rendreEtatSync();
+      if (syncRelance) { syncRelance = false; synchroniser(); }
+    }
+  }
+  function texteSync(){
+    const n = S.sync.attente.length, att = n ? ` ; ${n} en attente` : "";
+    const h = S.sync.derniere ? new Date(S.sync.derniere).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : null;
+    if (syncEtat === "absente") return "Synchronisation pas encore installée sur le site : les données restent sur cet appareil.";
+    if (syncEtat === "sans-cle") return "Synchronisation inactive : clé à saisir dans Réglages.";
+    if (syncEtat === "cle-refusee") return "Clé de synchronisation refusée : à vérifier dans Réglages.";
+    if (syncEtat === "hors-ligne" || syncEtat === "erreur") return `Hors ligne${att}. ${h ? `Dernière synchronisation à ${h}.` : ""}`.trim();
+    if (syncEtat === "ok") return `Synchronisé à ${h}${att}.`;
+    return "";
+  }
+  function rendreEtatSync(){
+    const t = texteSync(), p = $("#etatSync");
+    p.hidden = !t; p.textContent = t;
+    if ($("#rSyncEtat")) $("#rSyncEtat").textContent = t;
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) synchroniser(); });
+  window.addEventListener("online", () => synchroniser());
 
   // ---------- utilitaires ----------
   const fmt = s => { s = Math.max(0, Math.floor(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
@@ -498,8 +571,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   function noterCoherence(secondes){
     if (B.cohNotee || !respire(seg()) || secondes < 1) return;
     B.cohNotee = true;
-    E = A.ajouterCoherence(E, { date: A.dateLocale(B.debut), h: A.heureLocale(B.debut), s: secondes });
-    ecrire();
+    ajouter("coherence", { date: A.dateLocale(B.debut), h: A.heureLocale(B.debut), s: Math.round(secondes) }, B.debut);
   }
   function secondesCoherence(){
     const c = B.tl && B.tl.coherence; if (!c || !ctx) return 0;
@@ -509,7 +581,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     arreterMinuterie();
     const s = seg();
     if (respire(s)) noterCoherence(B.tl.coherence.fin - B.tl.coherence.t0);
-    if (s.type === "micro"){ E = A.ajouterMicro(E, A.dateLocale(B.debut)); ecrire(); }
+    if (s.type === "micro") ajouter("micro", { date: A.dateLocale(B.debut), h: A.heureLocale(B.debut) }, B.debut);
     B.tl = null;
     B.i = suivantIndex(B.i + 1);
     if (B.i < B.plan.length) montrerPorte();
@@ -612,8 +684,9 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   }
   function enregistrer(gene){
     const d = new Date();
-    const r = A.finirBloc(E, { date: A.dateLocale(d), h: A.heureLocale(d), gene, tenuesPropres: decl.tenues, yPropres: decl.y });
-    E = r.etat; ecrire();
+    const date = A.dateLocale(d), deja = !!(E.jours[date] && E.jours[date].bloc);
+    ajouter("bloc", { date, h: A.heureLocale(d), gene: !!gene, tenuesPropres: !gene && !!decl.tenues, yPropres: !gene && !!decl.y }, d);
+    const r = { compte: !deja };
     $("#fDecl").hidden = true; $("#fResultat").hidden = false;
     let msg;
     if (!r.compte) msg = "Un bloc est déjà enregistré aujourd'hui : celui-ci ne compte pas pour la progression.";
@@ -631,7 +704,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
       const a = document.createElement("div"); a.className = "actions"; a.style.marginTop = "0";
       const ok = document.createElement("button"); ok.className = "bouton primaire"; ok.textContent = "Accepter";
       const non = document.createElement("button"); non.className = "bouton"; non.textContent = "Plus tard";
-      ok.addEventListener("click", () => { E = A.accepter(E, p.id); ecrire(); rendrePropositions(true); $("#fMessage").textContent = "Palier accepté. " + A.descriptionEtape(E); });
+      ok.addEventListener("click", () => { ajouter("palier", { choix: p.id }); rendrePropositions(true); $("#fMessage").textContent = "Palier accepté. " + A.descriptionEtape(E); });
       non.addEventListener("click", () => d.remove());
       a.append(ok, non); d.append(t, a); box.appendChild(d);
     });
@@ -670,28 +743,33 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
       btn.textContent = "Commencer la cohérence"; btn.dataset.mode = "coherence";
     } else if (a.suite){
       $("#aTitre").textContent = `Cohérence ${a.creneau === "matin" ? "du matin" : "de midi"} faite`;
-      $("#aPourquoi").textContent = `Prochaine : ${a.suite.creneau === "midi" ? "cohérence de midi" : "bloc nuque du soir"}, à partir de ${a.suite.heure} h. D'ici là, micro-pauses au bureau.`;
+      $("#aPourquoi").textContent = `Prochaine : ${a.suite.creneau === "midi" ? "cohérence de midi" : "bloc nuque du soir"}, à partir de ${a.suite.heure} h. D'ici là, une micro-pause toutes les 30 à 60 min si tu restes assis.`;
     } else {
       $("#aTitre").textContent = "Journée terminée";
       $("#aPourquoi").textContent = ej.coherences >= 3 ? "Bloc et trois cohérences faits." : "Rien d'autre à faire ce soir.";
     }
 
     const ordre = ["matin", "midi", "soir"], iNow = ordre.indexOf(a.creneau);
-    const etat = (k, i) => {
-      const coh = ej[k] ? `cohérence faite à ${ej[k]}` : i < iNow ? "pas de cohérence" : i === iNow ? "cohérence à faire" : "cohérence à venir";
-      if (k !== "soir") return coh;
-      const bloc = ej.bloc ? `bloc fait à ${ej.bloc.h}${ej.bloc.gene ? ", avec gêne" : ""}` : i === iNow ? "bloc à faire" : "bloc à venir";
-      return `${bloc}, ${coh}`;
-    };
+    const cren = (k, i) => `${k} ${ej[k] ? ej[k] : i < iNow ? "non faite" : i === iNow ? "à faire" : "à venir"}`;
     const ul = $("#etatJour"); ul.innerHTML = "";
-    const ligne = (cle, val, now) => {
-      const li = document.createElement("li"); if (now) li.className = "maintenant";
+    const ligne = (cle, val, detail, rappel) => {
+      const li = document.createElement("li");
       const k = document.createElement("span"); k.className = "cle"; k.textContent = cle;
       const v = document.createElement("span"); v.textContent = val;
+      if (detail){ const dd = document.createElement("span"); dd.className = "detail-jour"; dd.textContent = detail; v.appendChild(dd); }
+      if (rappel){ const rr = document.createElement("span"); rr.className = "detail-jour rappel"; rr.textContent = rappel; v.appendChild(rr); }
       li.append(k, v); ul.appendChild(li);
     };
-    ordre.forEach((k, i) => ligne(NOMS[k], etat(k, i), i === iNow));
-    ligne("Micro-pauses", String(ej.micro), false);
+    ligne("Cohérences", `${ej.coherences} sur 3`, ordre.map(cren).join(", "));
+    ligne("Bloc", `${ej.bloc ? 1 : 0} sur 1`, ej.bloc ? `fait à ${ej.bloc.h}${ej.bloc.gene ? ", avec gêne" : ""}` : "le soir, après PALIER ou un jour sans séance");
+    const regle = "Une toutes les 30 à 60 min en position assise prolongée.";
+    let rappel = "", enRetard = false;
+    if (ej.derniereMicro){
+      const [hh, mm] = ej.derniereMicro.split(":").map(Number), ecart = Math.max(0, d.getHours() * 60 + d.getMinutes() - (hh * 60 + mm));
+      rappel = `Dernière à ${ej.derniereMicro}, il y a ${ecart < 60 ? `${ecart} min` : `${Math.floor(ecart / 60)} h ${String(ecart % 60).padStart(2, "0")}`}.`;
+      enRetard = ecart > 60;
+    }
+    ligne("Micro-pauses", String(ej.micro), enRetard ? regle : `${regle} ${rappel}`.trim(), enRetard ? rappel : "");
 
     const box = $("#autres"); box.innerHTML = "";
     [["micro", "Micro-pause"], ["coherence", "Cohérence"], ["bloc", ej.bloc ? "Refaire un bloc (ne compte pas)" : "Bloc nuque"]]
@@ -723,6 +801,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     d.addEventListener("toggle", () => { if (!d.open) try { localStorage.setItem(CLE_BREF, "1"); } catch {} });
   })();
   $("#aLancer").addEventListener("click", e => lancer(e.currentTarget.dataset.mode));
+  setInterval(() => { if (!$("#accueil").hidden && !document.hidden) rendreAccueil(); }, 60000);
 
   // ---------- exercices et fiches ----------
   const GROUPES = [
@@ -788,7 +867,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     $("#jMessage").textContent = "";
   }
   $("#exporter").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(E, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(S, null, 2)], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `aplomb-${aujourdhui()}.json`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
@@ -797,9 +876,12 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     const f = ev.target.files[0]; ev.target.value = "";
     if (!f) return;
     try {
-      const e = A.migrer(JSON.parse(await f.text()));
-      if (!confirm("Remplacer les données de cet appareil par celles du fichier ?")) return;
-      E = e; ecrire(); rendreJournal(); $("#jMessage").textContent = "Import terminé.";
+      const lu = A.migrer(JSON.parse(await f.text()));
+      if (!confirm("Fusionner le fichier avec les données de cet appareil ? Rien n'est effacé.")) return;
+      const avant = S.evenements.length;
+      S = A.fusionner(S, lu.evenements, { aSignaler: true }); ecrire(); E = A.deriver(S);
+      rendreJournal(); $("#jMessage").textContent = `Import terminé : ${S.evenements.length - avant} élément(s) ajouté(s).`;
+      synchroniser();
     } catch (err) { $("#jMessage").textContent = `Import impossible : ${err.message}`; }
   });
 
@@ -812,34 +894,42 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
     document.querySelectorAll("#rObjectif button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.v === R.objectif)));
     document.querySelectorAll("#rSons button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === R.son)));
     $("#rHauteur").value = R.hauteur; $("#rVolume").value = R.volume;
+    $("#rCle").value = lireCle(); rendreEtatSync();
     $("#rDebut").value = R.debut || ""; $("#rMidi").value = R.creneaux.midi; $("#rSoir").value = R.creneaux.soir;
     $("#rHauteurVal").textContent = R.hauteur ? `(${R.hauteur > 0 ? "+" : ""}${R.hauteur})` : "";
   }
   [180, 240, 300, 360].forEach(v => {
     const b = document.createElement("button"); b.dataset.v = v; b.textContent = `${v / 60} min`;
-    b.addEventListener("click", () => { E.reglages.objectif = v; ecrire(); rendreReglages(); });
+    b.addEventListener("click", () => { ajouter("reglages", { objectif: v }); rendreReglages(); });
     $("#rObjectif").appendChild(b);
   });
   Object.entries(SONS).forEach(([id, s]) => {
     const b = document.createElement("button"); b.dataset.v = id; b.textContent = s.label;
-    b.addEventListener("click", () => { E.reglages.son = id; ecrire(); rendreReglages(); apercu(false); });
+    b.addEventListener("click", () => { reglerLocal("son", id); rendreReglages(); apercu(false); });
     $("#rSons").appendChild(b);
   });
   $("#rTempo").addEventListener("change", e => {
     const v = Math.round(+e.target.value);
-    E.reglages.tempo = Number.isFinite(v) ? Math.min(80, Math.max(40, v)) : 55; ecrire(); rendreReglages();
+    reglerLocal("tempo", Number.isFinite(v) ? Math.min(80, Math.max(40, v)) : 55); rendreReglages();
   });
-  $("#rDebut").addEventListener("change", e => { E.reglages.debut = /^\d{4}-\d{2}-\d{2}$/.test(e.target.value) ? e.target.value : null; ecrire(); rendreReglages(); });
+  $("#rDebut").addEventListener("change", e => { ajouter("reglages", { debut: /^\d{4}-\d{2}-\d{2}$/.test(e.target.value) ? e.target.value : null }); rendreReglages(); });
   function changerCreneau(cle, v){
     const c = { ...E.reglages.creneaux, [cle]: Math.round(+v) };
-    if (Number.isInteger(c.midi) && Number.isInteger(c.soir) && c.midi > 0 && c.midi < c.soir && c.soir < 24){ E.reglages.creneaux = c; ecrire(); }
+    if (Number.isInteger(c.midi) && Number.isInteger(c.soir) && c.midi > 0 && c.midi < c.soir && c.soir < 24) ajouter("reglages", { creneaux: c });
     rendreReglages();
   }
   $("#rMidi").addEventListener("change", e => changerCreneau("midi", e.target.value));
   $("#rSoir").addEventListener("change", e => changerCreneau("soir", e.target.value));
-  $("#rHauteur").addEventListener("input", e => { E.reglages.hauteur = +e.target.value; ecrire(); rendreReglages(); });
+  $("#rHauteur").addEventListener("input", e => { reglerLocal("hauteur", +e.target.value); rendreReglages(); });
   $("#rHauteur").addEventListener("change", () => apercu(false));
-  $("#rVolume").addEventListener("input", e => { E.reglages.volume = +e.target.value; ecrire(); });
+  $("#rVolume").addEventListener("input", e => reglerLocal("volume", +e.target.value));
+  $("#rCleOk").addEventListener("click", () => {
+    const v = $("#rCle").value.trim().toLowerCase();
+    if (!/^[0-9a-f]{32,}$/.test(v)) { $("#rSyncEtat").textContent = "Clé invalide : 32 caractères ou plus, chiffres et lettres de a à f."; return; }
+    try { localStorage.setItem(CLE_SYNC, v); } catch {}
+    synchroniser();
+  });
+  $("#rSyncNow").addEventListener("click", () => synchroniser());
   $("#rEcouter").addEventListener("click", () => apercu(true));
   function apercu(complet){
     if (B.actif) return;
@@ -881,6 +971,7 @@ dialog ul{padding-left:1.1rem;display:grid;gap:.4rem;margin:1rem 0}
   window.addEventListener("beforeunload", e => { if (B.actif){ e.preventDefault(); e.returnValue = ""; } });
 
   montrer("accueil");
+  synchroniser();
 })();
 </script>
 </body>

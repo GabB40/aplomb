@@ -44,29 +44,35 @@ nouvelle. Les décisions de contenu santé sont détaillées dans `programme.md`
 | 37 | Date de départ du programme (J0) et bornes des créneaux en réglages ; les relevés J0, J7, J21, J42 sont annoncés, jamais saisis dans l'app | proposé par Claude, validé |
 | 38 | Bloc et cohérence séparés : flexion cranio-cervicale et tête décollée en tenues chronométrées (10 s, 5 s au premier palier de la tête décollée ; 10 s de relâchement), sans bips de respiration ; la cohérence du soir est une séance à part, proposée à la fin du bloc, et le bloc ne compte plus comme cohérence. Remplace la séance couplée et les décisions 22, 24 et 26 ; amende la 14 | problème relevé par Gabriel (trop de choses à surveiller à la fois), correction proposée par Claude, validée |
 | 39 | Écran « Prêt » : déroulé, mise en place, un seul point à surveiller pendant l'effort, son ; étapes, sensation et erreurs dans la fiche | idem |
+| 40 | Synchronisation entre appareils : pile CloudFormation (API HTTP, Lambda, DynamoDB) en eu-west-3, clé partagée saisie une fois par appareil (lien d'appairage ou Réglages). Stockage en journal d'événements (cohérence, micro-pause, bloc, palier, réglages) fusionné par union ; état recalculé par rejeu ; local d'abord, hors ligne possible ; import qui fusionne au lieu de remplacer. Réglages du programme partagés (J0, créneaux, objectif), réglages du son propres à chaque appareil | besoin de Gabriel (téléphone et ordinateur), conception proposée par Claude, validée |
+| 41 | Objectifs du jour affichés : cohérences n sur 3 avec le détail par créneau, bloc n sur 1, micro-pauses avec la règle (une toutes les 30 à 60 min en position assise prolongée, pas seulement au bureau) et l'heure de la dernière, rappel en laiton au-delà de 60 min ; toujours sans couleur d'échec. Remplace « sans objectif » | demande de Gabriel, forme proposée par Claude |
 
-## Modèle de données (v1)
+## Modèle de données (v2)
 
 Stockage : localStorage, clé `aplomb:etat`, export et import JSON. Un contenu illisible est mis de
-côté sous `aplomb:etat:illisible` au lieu d'être écrasé. Chaque appareil garde son historique en
-V1. Dates en heure locale au format `AAAA-MM-JJ` (pas `toISOString()`, qui rattache à la veille les
-séances entre minuit et 2 h).
+côté sous `aplomb:etat:illisible` au lieu d'être écrasé ; un stockage v1 est copié sous
+`aplomb:etat:v1` avant sa conversion. Dates en heure locale au format `AAAA-MM-JJ` (pas
+`toISOString()`, qui rattache à la veille les séances entre minuit et 2 h). Clé de synchronisation
+sous `aplomb:cle`, jamais exportée.
 
 ```
-{ v: 1,
-  etape: 1,
-  serie: { tenues: 0, y: 0 },
-  prog: { tete: { tenue: "phase" | "cycle", reps: 5 | 10 }, y: { reps: 8 | 10 | 12 } },  // phase : 5 s, cycle : 10 s depuis la v0.3
-  jours: { "2026-09-28": {
-    coherences: [{ h: "07:40", s: 305, ok: true }],
-    bloc: { h: "21:10", etape: 1, tenuesPropres: true, yPropres: true, gene: false },
-    micro: 0 } },
-  reglages: { tempo: 55, objectif: 300, son: "bip", hauteur: 0, volume: 0.7,
-    debut: "2026-09-27" | null, creneaux: { midi: 11, soir: 15 } } }
+{ v: 2,
+  evenements: [
+    { id, type: "coherence", t, date, h, s },
+    { id, type: "micro", t, date, h | null },
+    { id, type: "bloc", t, date, h, gene, tenuesPropres, yPropres },
+    { id, type: "palier", t, choix: "tenues" | "y" },
+    { id, type: "reglages", t, objectif?, debut?, creneaux? } ],
+  local: { tempo, son, hauteur, volume },
+  sync: { attente: [id], derniere: ms | null } }
 ```
 
-`micro` compte les micro-pauses allées au bout. `debut` et `creneaux` arrivent en v0.2 : un fichier
-v0.1 s'importe tel quel, les valeurs absentes ou invalides reprennent leur défaut. La cohérence d'un
-créneau est la première à l'objectif dont l'heure tombe dans ses bornes.
+`id` : UUID (ou identifiant `v1-…` pour les données converties) ; `t` : horodatage en ms, qui ordonne
+le rejeu. L'état lu par l'interface (étape, séries, paliers, journées, réglages) est recalculé par
+`deriver` : un seul bloc compte par jour (le premier), un palier n'est appliqué que s'il était
+proposé à ce moment, le réglage partagé le plus récent l'emporte clé par clé. Conversion v1 : les
+cohérences, blocs, micro-pauses (sans heure) et réglages sont repris ; la progression est recalculée
+depuis les blocs (aucun palier n'a pu être accepté en v1).
 
-`ok` fige le résultat au moment de la séance : changer l'objectif ne réécrit pas l'historique.
+Côté serveur : table DynamoDB, clé de partition `pk = "aplomb"`, clé de tri `sk = id`, attribut `e`
+(l'événement en JSON). L'API reçoit `{ evenements }`, les écrit et renvoie le journal complet.

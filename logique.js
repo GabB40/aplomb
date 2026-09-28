@@ -3,8 +3,8 @@
 (function (racine) {
   "use strict";
 
-  const VERSION = "0.3.0";
-  const MODELE = 1;
+  const VERSION = "0.4.0";
+  const MODELE = 2;           // stockage : journal d'événements (v1 : état direct, migré à la lecture)
   const PREP = 5;            // secondes de mise en place avant chaque exercice minuté
   const TRANSITION = 5;      // secondes entre deux côtés ou deux directions
   const REPOS_SERIES = 30;   // secondes entre deux séries de Y
@@ -15,7 +15,6 @@
   const MACHOIRE = 8;        // secondes de mâchoire au repos en début de micro-pause
   const MICRO = { reps: 5, tenue: 5, repos: 3 };
   const RELEVES = [0, 7, 21, 42];
-  const CRENEAUX_DEFAUT = { midi: 11, soir: 15 };
 
   // ---------- contenu (aligné sur docs/programme.md) ----------
   // Fiches : but, position (lieu), étapes, sensation, erreurs, vidéo validée (docs/videos.md).
@@ -177,10 +176,10 @@
     },
     micro: {
       titre: "Flexion cranio-cervicale assise",
-      lieu: "Assis droit, au bureau",
+      lieu: "Assis droit",
       enPlace: "Assis droit. Mâchoire au repos : lèvres jointes, dents desserrées, langue au palais. Deux doigts sur le SCOM.",
       pendant: "Petit « oui », la tête ne recule ni n'avance. Seul point à surveiller : le SCOM reste mou.",
-      but: "Refaire dans la journée le geste du bloc, là où la tête avance : au bureau.",
+      but: "Refaire dans la journée le geste du bloc, là où la tête avance : en position assise prolongée (bureau, écran, voiture à l'arrêt).",
       etapes: [
         "Mâchoire au repos : lèvres jointes, dents desserrées, langue au palais.",
         "Deux doigts sur le SCOM.",
@@ -229,31 +228,139 @@
 
   // ---------- état ----------
   const clone = o => JSON.parse(JSON.stringify(o));
+  // État dérivé : ce que l'interface lit. Recalculé à partir du journal d'événements (deriver).
   function etatInitial() {
     return {
-      v: MODELE,
       etape: 1,
       serie: { tenues: 0, y: 0 },
       prog: { tete: { tenue: "phase", reps: 5 }, y: { reps: 8 } },
       jours: {},
-      reglages: { tempo: 55, objectif: 300, son: "bip", hauteur: 0, volume: 0.7, debut: null, creneaux: clone(CRENEAUX_DEFAUT) }
+      reglages: { ...clone(LOCAL_DEFAUT), ...clone(PARTAGES_DEFAUT) }
     };
   }
-  function migrer(obj) {
-    if (!obj || typeof obj !== "object" || obj.v !== MODELE) throw new Error("Fichier non reconnu : version de modèle attendue " + MODELE + ".");
+  const LOCAL_DEFAUT = { tempo: 55, son: "bip", hauteur: 0, volume: 0.7 };
+  const PARTAGES_DEFAUT = { objectif: 300, debut: null, creneaux: { midi: 11, soir: 15 } };
+  const OBJECTIFS = [180, 240, 300, 360];
+  const dateValide = d => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
+  const heureValide = h => typeof h === "string" && /^\d{2}:\d{2}$/.test(h);
+  const creneauxValides = c => !!c && Number.isInteger(c.midi) && Number.isInteger(c.soir) && c.midi > 0 && c.midi < c.soir && c.soir < 24;
+  // Ne garde que les réglages partagés valides d'un événement.
+  function partagesValides(x) {
+    const out = {};
+    if ("objectif" in x && OBJECTIFS.includes(x.objectif)) out.objectif = x.objectif;
+    if ("debut" in x && (x.debut === null || dateValide(x.debut))) out.debut = x.debut;
+    if ("creneaux" in x && creneauxValides(x.creneaux)) out.creneaux = { midi: x.creneaux.midi, soir: x.creneaux.soir };
+    return out;
+  }
+  function localValide(x) {
+    const out = clone(LOCAL_DEFAUT);
+    if (!x || typeof x !== "object") return out;
+    if (Number.isFinite(x.tempo)) out.tempo = Math.min(80, Math.max(40, Math.round(x.tempo)));
+    if (typeof x.son === "string") out.son = x.son;
+    if (Number.isFinite(x.hauteur)) out.hauteur = Math.min(12, Math.max(-12, Math.round(x.hauteur)));
+    if (Number.isFinite(x.volume)) out.volume = Math.min(1, Math.max(0, x.volume));
+    return out;
+  }
+
+  // ---------- journal d'événements ----------
+  const TYPES = ["coherence", "micro", "bloc", "palier", "reglages"];
+  function evenementValide(ev) {
+    if (!ev || typeof ev !== "object" || typeof ev.id !== "string" || !ev.id || ev.id.length > 100 || !TYPES.includes(ev.type) || !Number.isFinite(ev.t)) return false;
+    if (ev.type === "coherence") return dateValide(ev.date) && heureValide(ev.h) && Number.isFinite(ev.s) && ev.s >= 0;
+    if (ev.type === "micro") return dateValide(ev.date) && (ev.h === null || heureValide(ev.h));
+    if (ev.type === "bloc") return dateValide(ev.date) && heureValide(ev.h);
+    if (ev.type === "palier") return ev.choix === "tenues" || ev.choix === "y";
+    return true;
+  }
+  function nouvelId() {
+    try { if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID(); } catch (_) {}
+    return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 12);
+  }
+  function evenement(type, champs, maintenant = new Date(), id = nouvelId()) {
+    return { id, type, t: maintenant.getTime(), ...champs };
+  }
+  function stockInitial() {
+    return { v: MODELE, evenements: [], local: clone(LOCAL_DEFAUT), sync: { attente: [], derniere: null } };
+  }
+  function ajouterEvenement(stock, ev) {
+    const s = clone(stock);
+    if (!evenementValide(ev) || s.evenements.some(x => x.id === ev.id)) return s;
+    s.evenements.push(clone(ev));
+    s.sync.attente.push(ev.id);
+    return s;
+  }
+  function enAttente(stock) {
+    const ids = new Set(stock.sync.attente);
+    return stock.evenements.filter(e => ids.has(e.id));
+  }
+  // Union par identifiant : aucun événement n'est jamais écrasé ni perdu.
+  // envoyes : identifiants acceptés par le serveur ; aSignaler : true pour un import (les nouveaux partent au serveur).
+  function fusionner(stock, recus, { envoyes = [], maintenant = null, aSignaler = false } = {}) {
+    const s = clone(stock), connus = new Set(s.evenements.map(e => e.id));
+    for (const ev of Array.isArray(recus) ? recus : []) {
+      if (!evenementValide(ev) || connus.has(ev.id)) continue;
+      s.evenements.push(clone(ev)); connus.add(ev.id);
+      if (aSignaler) s.sync.attente.push(ev.id);
+    }
+    const partis = new Set(envoyes);
+    s.sync.attente = s.sync.attente.filter(id => !partis.has(id));
+    if (maintenant !== null) s.sync.derniere = maintenant;
+    return s;
+  }
+
+  // Rejoue le journal dans l'ordre chronologique. Deux appareils qui ont les mêmes événements
+  // obtiennent le même état, progression comprise.
+  function deriver(stock) {
     const e = etatInitial();
-    if (![1, 2, 3].includes(obj.etape)) throw new Error("Étape invalide.");
-    e.etape = obj.etape;
-    e.serie = { tenues: +(obj.serie && obj.serie.tenues) || 0, y: +(obj.serie && obj.serie.y) || 0 };
-    if (obj.prog && obj.prog.tete && ["phase", "cycle"].includes(obj.prog.tete.tenue) && [5, 10].includes(obj.prog.tete.reps)) e.prog.tete = { tenue: obj.prog.tete.tenue, reps: obj.prog.tete.reps };
-    if (obj.prog && obj.prog.y && [8, 10, 12].includes(obj.prog.y.reps)) e.prog.y = { reps: obj.prog.y.reps };
-    if (obj.jours && typeof obj.jours === "object") e.jours = clone(obj.jours);
-    if (obj.reglages && typeof obj.reglages === "object") e.reglages = { ...e.reglages, ...obj.reglages };
-    const c = e.reglages.creneaux;
-    e.reglages.creneaux = c && Number.isInteger(c.midi) && Number.isInteger(c.soir) && c.midi > 0 && c.midi < c.soir && c.soir < 24
-      ? { midi: c.midi, soir: c.soir } : clone(CRENEAUX_DEFAUT);
-    if (!(typeof e.reglages.debut === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.reglages.debut))) e.reglages.debut = null;
+    e.reglages = { ...e.reglages, ...localValide(stock.local) };
+    const evs = stock.evenements.filter(evenementValide).sort((a, b) => a.t - b.t || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    for (const ev of evs) {
+      if (ev.type === "reglages") Object.assign(e.reglages, clone(partagesValides(ev)));
+      else if (ev.type === "coherence") appliquerCoherence(e, ev);
+      else if (ev.type === "micro") appliquerMicro(e, ev.date, ev.h);
+      else if (ev.type === "bloc") appliquerBloc(e, ev);
+      else if (ev.type === "palier") appliquerPalier(e, ev.choix);
+    }
     return e;
+  }
+
+  // Lecture du stockage ou d'un fichier : v2 tel quel (événements valides), v1 converti en événements.
+  function migrer(obj) {
+    if (!obj || typeof obj !== "object") throw new Error("Fichier non reconnu.");
+    if (obj.v === MODELE) {
+      if (!Array.isArray(obj.evenements)) throw new Error("Fichier non reconnu : journal absent.");
+      const s = stockInitial();
+      const vus = new Set();
+      s.evenements = obj.evenements.filter(ev => evenementValide(ev) && !vus.has(ev.id) && vus.add(ev.id)).map(clone);
+      s.local = localValide(obj.local);
+      const ids = new Set(s.evenements.map(e => e.id));
+      s.sync.attente = (obj.sync && Array.isArray(obj.sync.attente) ? obj.sync.attente : []).filter(id => ids.has(id));
+      s.sync.derniere = obj.sync && Number.isFinite(obj.sync.derniere) ? obj.sync.derniere : null;
+      return s;
+    }
+    if (obj.v === 1) return depuisV1(obj);
+    throw new Error("Fichier non reconnu : version de modèle " + obj.v + ".");
+  }
+  // v1 : la progression est recalculée depuis les blocs (aucun palier n'a pu être accepté en v1).
+  function depuisV1(obj) {
+    if (![1, 2, 3].includes(obj.etape)) throw new Error("Étape invalide.");
+    const s = stockInitial(), R = obj.reglages && typeof obj.reglages === "object" ? obj.reglages : {};
+    s.local = localValide(R);
+    const t = (d, h) => { const [y, m, j] = d.split("-").map(Number), [hh, mm] = (h || "00:00").split(":").map(Number); return new Date(y, m - 1, j, hh, mm).getTime(); };
+    const pousser = ev => { if (evenementValide(ev)) s.evenements.push(ev); };
+    const partages = partagesValides(R);
+    if (partages.objectif === PARTAGES_DEFAUT.objectif) delete partages.objectif;
+    if (partages.debut === null) delete partages.debut;
+    if (partages.creneaux && partages.creneaux.midi === 11 && partages.creneaux.soir === 15) delete partages.creneaux;
+    if (Object.keys(partages).length) pousser({ id: "v1-reglages-" + nouvelId(), type: "reglages", t: 0, ...partages });
+    for (const [date, j] of Object.entries(obj.jours && typeof obj.jours === "object" ? obj.jours : {})) {
+      if (!dateValide(date) || !j) continue;
+      (Array.isArray(j.coherences) ? j.coherences : []).forEach((c, i) => pousser({ id: `v1-coh-${date}-${c.h}-${c.s}-${i}`, type: "coherence", t: t(date, c.h), date, h: c.h, s: c.s }));
+      for (let i = 0; i < (Number.isInteger(j.micro) ? j.micro : 0); i++) pousser({ id: "v1-micro-" + nouvelId(), type: "micro", t: t(date), date, h: null });
+      if (j.bloc && heureValide(j.bloc.h)) pousser({ id: `v1-bloc-${date}-${j.bloc.h}`, type: "bloc", t: t(date, j.bloc.h), date, h: j.bloc.h, gene: !!j.bloc.gene, tenuesPropres: !!j.bloc.tenuesPropres, yPropres: !!j.bloc.yPropres });
+    }
+    s.sync.attente = s.evenements.map(e => e.id);
+    return s;
   }
 
   // ---------- plan du bloc ----------
@@ -389,16 +496,16 @@
     if (!etat.jours[date]) etat.jours[date] = { coherences: [], micro: 0 };
     return etat.jours[date];
   }
-  function ajouterCoherence(etat, { date, h, s }) {
-    const e = clone(etat);
+  function appliquerCoherence(e, { date, h, s }) {
     jour(e, date).coherences.push({ h, s: Math.round(s), ok: s >= e.reglages.objectif - 0.5 });
-    return e;
   }
-  function ajouterMicro(etat, date) {
-    const e = clone(etat), j = jour(e, date);
+  function appliquerMicro(e, date, h) {
+    const j = jour(e, date);
     j.micro = (j.micro || 0) + 1;
-    return e;
+    if (h && (!j.derniereMicro || h > j.derniereMicro)) j.derniereMicro = h;
   }
+  function ajouterCoherence(etat, x) { const e = clone(etat); appliquerCoherence(e, x); return e; }
+  function ajouterMicro(etat, date, h = null) { const e = clone(etat); appliquerMicro(e, date, h); return e; }
 
   // ---------- journée : créneaux et action du moment ----------
   const minutes = h => { const [a, b] = h.split(":").map(Number); return a * 60 + b; };
@@ -406,7 +513,7 @@
   // Cohérences à l'objectif rangées par créneau (heure de la première), bloc, micro-pauses.
   function etatJour(etat, date) {
     const j = etat.jours[date] || { coherences: [], micro: 0 };
-    const out = { matin: null, midi: null, soir: null, bloc: j.bloc || null, micro: j.micro || 0, coherences: 0 };
+    const out = { matin: null, midi: null, soir: null, bloc: j.bloc || null, micro: j.micro || 0, derniereMicro: j.derniereMicro || null, coherences: 0 };
     for (const x of j.coherences || []) {
       if (!x.ok) continue;
       out.coherences++;
@@ -443,9 +550,10 @@
 
   // ---------- progression ----------
   // decl : { gene, tenuesPropres, yPropres }. Renvoie { etat, compte }.
-  function finirBloc(etat, { date, h, gene, tenuesPropres, yPropres }) {
-    const e = clone(etat), j = jour(e, date);
-    if (j.bloc) return { etat: e, compte: false };
+  function finirBloc(etat, decl) { const e = clone(etat), compte = appliquerBloc(e, decl); return { etat: e, compte }; }
+  function appliquerBloc(e, { date, h, gene, tenuesPropres, yPropres }) {
+    const j = jour(e, date);
+    if (j.bloc) return false;
     j.bloc = { h, etape: e.etape, tenuesPropres: !gene && !!tenuesPropres, yPropres: !gene && !!yPropres, gene: !!gene };
     if (gene) {
       e.etape = Math.max(1, e.etape - 1);
@@ -455,7 +563,7 @@
       e.serie.tenues = tenuesPropres ? e.serie.tenues + 1 : 0;
       e.serie.y = yPropres ? e.serie.y + 1 : 0;
     }
-    return { etat: e, compte: true };
+    return true;
   }
   function paliersTete() { return [{ tenue: "phase", reps: 5 }, { tenue: "cycle", reps: 5 }, { tenue: "cycle", reps: 10 }]; }
   function indexTete(t) { return paliersTete().findIndex(p => p.tenue === t.tenue && p.reps === t.reps); }
@@ -474,17 +582,16 @@
     if (etat.serie.y >= 3 && etat.prog.y.reps < 12) out.push({ id: "y", texte: `Y au sol : passer à 2 × ${etat.prog.y.reps + 2}.` });
     return out;
   }
-  function accepter(etat, id) {
-    if (!propositions(etat).some(p => p.id === id)) return clone(etat);
-    const e = clone(etat);
-    if (id === "y") { e.prog.y.reps += 2; e.serie.y = 0; return e; }
+  function accepter(etat, id) { const e = clone(etat); appliquerPalier(e, id); return e; }
+  function appliquerPalier(e, id) {
+    if (!propositions(e).some(p => p.id === id)) return;
+    if (id === "y") { e.prog.y.reps += 2; e.serie.y = 0; return; }
     e.serie.tenues = 0;
     if (e.etape === 1) { e.etape = 2; e.prog = { tete: { tenue: "phase", reps: 5 }, y: { reps: 8 } }; e.serie.y = 0; }
     else if (e.etape === 2) {
       const i = indexTete(e.prog.tete);
       if (i < 2) e.prog.tete = clone(paliersTete()[i + 1]); else e.etape = 3;
     }
-    return e;
   }
   function descriptionEtape(etat) {
     const e = etat.etape, y = etat.prog.y.reps;
@@ -495,7 +602,7 @@
 
   const API = {
     VERSION, MODELE, PREP, TRANSITION, TENUE_SEC, RELACHE_TENUES, REPOS_SERIES, MACHOIRE, MICRO, RELEVES, CONTENU, RESPIRATION, DIRECTIONS,
-    dateLocale, heureLocale, etatInitial, migrer, planBloc, planCoherence, planMicro, dosage, timeline,
+    dateLocale, heureLocale, etatInitial, migrer, stockInitial, evenement, nouvelId, ajouterEvenement, enAttente, fusionner, deriver, evenementValide, planBloc, planCoherence, planMicro, dosage, timeline,
     ajouterCoherence, ajouterMicro, resumeJour, etatJour, creneauDe, actionDuJour, jourProgramme, ajouterJours,
     finirBloc, propositions, accepter, descriptionEtape
   };

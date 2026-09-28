@@ -171,13 +171,6 @@ test("les fonctions ne modifient pas l'état reçu", () => {
   assert.equal(JSON.stringify(e), gel);
 });
 
-test("import : aller-retour et refus d'un fichier étranger", () => {
-  const e = propre(A.etatInitial());
-  assert.deepEqual(A.migrer(JSON.parse(JSON.stringify(e))), e);
-  assert.throws(() => A.migrer({ foo: 1 }));
-  assert.throws(() => A.migrer({ v: 1, etape: 7 }));
-});
-
 test("fiches : but, position, étapes, sensation, erreurs ; une vidéo validée sauf pour la cohérence", () => {
   for (const [id, c] of Object.entries(A.CONTENU)) {
     assert.ok(c.titre && c.lieu && c.but && c.sensation, id);
@@ -259,17 +252,6 @@ test("micro-pauses comptées par jour", () => {
   assert.equal(A.etatJour(e, "2026-12-05").micro, 0);
 });
 
-test("import : réglages v0.1 complétés, créneaux et date invalides remis par défaut", () => {
-  const v01 = A.etatInitial(); delete v01.reglages.creneaux; delete v01.reglages.debut;
-  const e = A.migrer(JSON.parse(JSON.stringify(v01)));
-  assert.deepEqual(e.reglages.creneaux, { midi: 11, soir: 15 }); assert.equal(e.reglages.debut, null);
-  const faux = A.etatInitial(); faux.reglages.creneaux = { midi: 16, soir: 12 }; faux.reglages.debut = "demain";
-  const f = A.migrer(JSON.parse(JSON.stringify(faux)));
-  assert.deepEqual(f.reglages.creneaux, { midi: 11, soir: 15 }); assert.equal(f.reglages.debut, null);
-  const bon = A.etatInitial(); bon.reglages.debut = "2026-09-27";
-  assert.equal(A.migrer(JSON.parse(JSON.stringify(bon))).reglages.debut, "2026-09-27");
-});
-
 test("micro-pause et cohérence ne modifient pas l'état reçu", () => {
   const e = A.etatInitial(), gel = JSON.stringify(e);
   A.ajouterMicro(e, "2026-12-06");
@@ -302,4 +284,119 @@ test("écrans « Prêt » : mise en place et un seul point à surveiller pour ch
     assert.ok(c.enPlace && c.pendant, id);
     assert.equal((c.pendant.match(/Seul point à surveiller/g) || []).length, 1, id);
   }
+});
+
+// ---------- v0.4 : journal d'événements et synchronisation ----------
+const quand = (d, h) => { const [y, m, j] = d.split("-").map(Number), [hh, mm] = h.split(":").map(Number); return new Date(y, m - 1, j, hh, mm); };
+const ev = (type, champs, d, h, id) => A.evenement(type, { date: d, h, ...champs }, quand(d, h), id);
+
+test("le rejeu du journal donne le même état que les fonctions appliquées dans l'ordre", () => {
+  const d = "2026-12-10";
+  let s = A.stockInitial();
+  s = A.ajouterEvenement(s, ev("coherence", { s: 300 }, d, "08:00", "a"));
+  s = A.ajouterEvenement(s, ev("micro", {}, d, "10:00", "b"));
+  s = A.ajouterEvenement(s, ev("bloc", { tenuesPropres: true, yPropres: false }, d, "21:00", "c"));
+  let e = A.ajouterCoherence(A.etatInitial(), { date: d, h: "08:00", s: 300 });
+  e = A.ajouterMicro(e, d, "10:00");
+  e = A.finirBloc(e, { date: d, h: "21:00", tenuesPropres: true, yPropres: false }).etat;
+  assert.deepEqual(A.deriver(s), e);
+  assert.equal(A.etatJour(A.deriver(s), d).derniereMicro, "10:00");
+});
+
+test("deux appareils : l'union des journaux donne la vraie journée", () => {
+  const d = "2026-09-28";
+  let pc = A.stockInitial(), tel = A.stockInitial();
+  pc = A.ajouterEvenement(pc, ev("coherence", { s: 300 }, d, "09:16", "pc1"));
+  for (const [i, h] of ["10:00", "10:45"].entries()) pc = A.ajouterEvenement(pc, ev("micro", {}, d, h, "pcm" + i));
+  tel = A.ajouterEvenement(tel, ev("coherence", { s: 300 }, d, "13:14", "tel1"));
+  for (const [i, h] of ["14:00", "15:00", "16:00"].entries()) tel = A.ajouterEvenement(tel, ev("micro", {}, d, h, "telm" + i));
+  const serveur = [...A.enAttente(pc), ...A.enAttente(tel)];
+  const pc2 = A.fusionner(pc, serveur, { envoyes: A.enAttente(pc).map(e => e.id), maintenant: 1 });
+  const tel2 = A.fusionner(tel, serveur, { envoyes: A.enAttente(tel).map(e => e.id), maintenant: 1 });
+  for (const s of [pc2, tel2]) {
+    const j = A.etatJour(A.deriver(s), d);
+    assert.equal(j.matin, "09:16"); assert.equal(j.midi, "13:14"); assert.equal(j.micro, 5); assert.equal(j.derniereMicro, "16:00");
+    assert.deepEqual(s.sync.attente, []); assert.equal(s.sync.derniere, 1);
+  }
+  assert.deepEqual(A.deriver(pc2), A.deriver(tel2));
+});
+
+test("fusion : un événement déjà connu n'est ni dupliqué ni remplacé ; un événement invalide est ignoré", () => {
+  let s = A.ajouterEvenement(A.stockInitial(), ev("coherence", { s: 300 }, "2026-12-11", "08:00", "x"));
+  s = A.fusionner(s, [{ ...s.evenements[0], s: 10 }, { id: "y", type: "inconnu", t: 1 }, { id: "z", type: "micro", t: 1, date: "demain", h: null }]);
+  assert.equal(s.evenements.length, 1); assert.equal(s.evenements[0].s, 300);
+});
+
+test("fusion : un événement envoyé pendant qu'un autre arrive reste en attente", () => {
+  let s = A.ajouterEvenement(A.stockInitial(), ev("micro", {}, "2026-12-12", "08:00", "m1"));
+  const partis = A.enAttente(s).map(e => e.id);
+  s = A.ajouterEvenement(s, ev("micro", {}, "2026-12-12", "08:40", "m2"));
+  s = A.fusionner(s, [], { envoyes: partis, maintenant: 5 });
+  assert.deepEqual(s.sync.attente, ["m2"]);
+});
+
+test("progression rejouée : bloc sur chaque appareil le même jour, seul le premier compte", () => {
+  const d = "2026-12-13";
+  let s = A.stockInitial();
+  s = A.ajouterEvenement(s, ev("bloc", { tenuesPropres: false, yPropres: false }, d, "21:30", "tard"));
+  s = A.ajouterEvenement(s, ev("bloc", { tenuesPropres: true, yPropres: true }, d, "20:00", "tot"));
+  const e = A.deriver(s);
+  assert.equal(e.jours[d].bloc.h, "20:00"); assert.equal(e.serie.tenues, 1);
+});
+
+test("progression rejouée : trois blocs propres puis palier accepté", () => {
+  let s = A.stockInitial();
+  ["2026-12-14", "2026-12-15", "2026-12-16"].forEach((d, i) => { s = A.ajouterEvenement(s, ev("bloc", { tenuesPropres: true, yPropres: true }, d, "21:00", "b" + i)); });
+  s = A.ajouterEvenement(s, A.evenement("palier", { choix: "tenues" }, quand("2026-12-16", "21:05"), "p"));
+  const e = A.deriver(s);
+  assert.equal(e.etape, 2); assert.equal(e.serie.tenues, 0);
+  const avant = A.ajouterEvenement(A.stockInitial(), A.evenement("palier", { choix: "tenues" }, quand("2026-12-01", "08:00"), "q"));
+  assert.equal(A.deriver(avant).etape, 1, "un palier sans proposition valide est ignoré");
+});
+
+test("réglages partagés : le plus récent l'emporte, clé par clé ; les réglages locaux ne voyagent pas", () => {
+  let s = A.stockInitial();
+  s = A.ajouterEvenement(s, A.evenement("reglages", { debut: "2026-09-27" }, new Date(2026, 8, 28, 9), "r1"));
+  s = A.ajouterEvenement(s, A.evenement("reglages", { creneaux: { midi: 12, soir: 17 } }, new Date(2026, 8, 28, 10), "r2"));
+  s = A.ajouterEvenement(s, A.evenement("reglages", { objectif: 999, creneaux: { midi: 18, soir: 12 } }, new Date(2026, 8, 28, 11), "r3"));
+  s.local.volume = 0.2;
+  const R = A.deriver(s).reglages;
+  assert.equal(R.debut, "2026-09-27"); assert.deepEqual(R.creneaux, { midi: 12, soir: 17 }); assert.equal(R.objectif, 300); assert.equal(R.volume, 0.2);
+});
+
+test("migration v1 : journées, bloc, micro-pauses et réglages repris ; progression recalculée", () => {
+  let v1 = A.ajouterCoherence(A.etatInitial(), { date: "2026-09-27", h: "21:00", s: 300 });
+  v1 = A.ajouterMicro(A.ajouterMicro(v1, "2026-09-28"), "2026-09-28");
+  v1 = A.finirBloc(v1, { date: "2026-09-27", h: "21:10", tenuesPropres: true, yPropres: true }).etat;
+  v1.reglages.debut = "2026-09-27"; v1.reglages.son = "bol";
+  v1.v = 1;
+  const s = A.migrer(JSON.parse(JSON.stringify(v1)));
+  assert.equal(s.v, 2); assert.equal(s.sync.attente.length, s.evenements.length);
+  const e = A.deriver(s);
+  assert.equal(e.jours["2026-09-28"].micro, 2);
+  assert.equal(e.jours["2026-09-27"].bloc.h, "21:10"); assert.equal(e.serie.tenues, 1);
+  assert.equal(e.reglages.debut, "2026-09-27"); assert.equal(e.reglages.son, "bol");
+  assert.equal(A.etatJour(e, "2026-09-27").soir, "21:00");
+});
+
+test("migration v1 de deux appareils : les micro-pauses s'additionnent", () => {
+  const v1 = n => { let e = A.etatInitial(); for (let i = 0; i < n; i++) e = A.ajouterMicro(e, "2026-09-28"); e.v = 1; return A.migrer(JSON.parse(JSON.stringify(e))); };
+  const pc = v1(2), tel = v1(3);
+  const s = A.fusionner(pc, A.enAttente(tel));
+  assert.equal(A.deriver(s).jours["2026-09-28"].micro, 5);
+});
+
+test("stockage v2 : aller-retour, refus d'un fichier étranger", () => {
+  let s = A.ajouterEvenement(A.stockInitial(), ev("coherence", { s: 300 }, "2026-12-17", "08:00", "a"));
+  assert.deepEqual(A.migrer(JSON.parse(JSON.stringify(s))), s);
+  assert.throws(() => A.migrer({ foo: 1 }));
+  assert.throws(() => A.migrer({ v: 1, etape: 7 }));
+  assert.throws(() => A.migrer({ v: 2 }));
+});
+
+test("import : les événements nouveaux partent au serveur à la synchronisation suivante", () => {
+  const a = A.ajouterEvenement(A.stockInitial(), ev("micro", {}, "2026-12-18", "08:00", "m1"));
+  const vide = A.fusionner(A.stockInitial(), [], { envoyes: [], maintenant: 1 });
+  const s = A.fusionner(vide, a.evenements, { aSignaler: true });
+  assert.deepEqual(s.sync.attente, ["m1"]);
 });

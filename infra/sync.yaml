@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: APLOMB, synchronisation entre appareils (API HTTP, Lambda, DynamoDB).
+
+Parameters:
+  Cle:
+    Type: String
+    NoEcho: true
+    MinLength: 32
+    AllowedPattern: "[0-9a-f]+"
+    Description: Clé partagée par les appareils (openssl rand -hex 16).
+  Origine:
+    Type: String
+    Default: https://aplomb.s1t3.link
+    Description: Seule origine autorisée par le CORS.
+
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: pk, AttributeType: S }
+        - { AttributeName: sk, AttributeType: S }
+      KeySchema:
+        - { AttributeName: pk, KeyType: HASH }
+        - { AttributeName: sk, KeyType: RANGE }
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - { Effect: Allow, Principal: { Service: lambda.amazonaws.com }, Action: sts:AssumeRole }
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: journal
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - { Effect: Allow, Action: [dynamodb:BatchWriteItem, dynamodb:Query], Resource: !GetAtt Table.Arn }
+
+  Fonction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: APLOMB, reçoit les événements d'un appareil et renvoie le journal complet.
+      Runtime: nodejs22.x
+      Handler: index.handler
+      Role: !GetAtt Role.Arn
+      Timeout: 10
+      MemorySize: 256
+      Environment:
+        Variables:
+          TABLE: !Ref Table
+          CLE: !Ref Cle
+      Code:
+        ZipFile: |
+          const { DynamoDBClient, BatchWriteItemCommand, QueryCommand } = require("@aws-sdk/client-dynamodb");
+          const crypto = require("crypto");
+          const db = new DynamoDBClient({});
+          const TABLE = process.env.TABLE, CLE = process.env.CLE, PK = "aplomb";
+          const TYPES = ["coherence", "micro", "bloc", "palier", "reglages"];
+          const rep = (code, corps) => ({ statusCode: code, headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
+          const egal = (a, b) => { const x = Buffer.from(String(a || "")), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
+          exports.handler = async (ev) => {
+            if (!egal(ev.headers && ev.headers["x-aplomb-cle"], CLE)) return rep(401, { erreur: "cle" });
+            let corps;
+            try { corps = JSON.parse(ev.isBase64Encoded ? Buffer.from(ev.body || "", "base64").toString() : ev.body || "{}"); }
+            catch { return rep(400, { erreur: "json" }); }
+            const liste = Array.isArray(corps.evenements) ? corps.evenements : [];
+            if (liste.length > 5000) return rep(400, { erreur: "volume" });
+            const parId = new Map();
+            for (const e of liste) {
+              if (!e || typeof e.id !== "string" || !e.id || e.id.length > 100 || !TYPES.includes(e.type) || JSON.stringify(e).length > 2000) return rep(400, { erreur: "evenement" });
+              parId.set(e.id, e);
+            }
+            const items = [...parId.values()].map(e => ({ PutRequest: { Item: { pk: { S: PK }, sk: { S: e.id }, e: { S: JSON.stringify(e) } } } }));
+            for (let i = 0; i < items.length; i += 25) {
+              let reste = { [TABLE]: items.slice(i, i + 25) };
+              for (let n = 0; n < 6 && reste && reste[TABLE] && reste[TABLE].length; n++) {
+                if (n) await new Promise(r => setTimeout(r, 100 * 2 ** n));
+                reste = (await db.send(new BatchWriteItemCommand({ RequestItems: reste }))).UnprocessedItems;
+              }
+              if (reste && reste[TABLE] && reste[TABLE].length) return rep(503, { erreur: "ecriture" });
+            }
+            const tous = [];
+            let depart;
+            do {
+              const r = await db.send(new QueryCommand({ TableName: TABLE, KeyConditionExpression: "pk = :p", ExpressionAttributeValues: { ":p": { S: PK } }, ExclusiveStartKey: depart }));
+              for (const it of r.Items || []) tous.push(JSON.parse(it.e.S));
+              depart = r.LastEvaluatedKey;
+            } while (depart);
+            return rep(200, { evenements: tous });
+          };
+
+  Api:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: aplomb-sync
+      ProtocolType: HTTP
+      Target: !GetAtt Fonction.Arn
+      CorsConfiguration:
+        AllowOrigins: [!Ref Origine]
+        AllowMethods: [POST]
+        AllowHeaders: [content-type, x-aplomb-cle]
+        MaxAge: 3600
+
+  Limites:
+    Type: AWS::ApiGatewayV2::ApiGatewayManagedOverrides
+    Properties:
+      ApiId: !Ref Api
+      Stage:
+        DefaultRouteSettings:
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 5
+
+  Permission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref Fonction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*
+
+Outputs:
+  Api:
+    Description: Adresse de l'API, publiée dans config.js par deploy.sh.
+    Value: !GetAtt Api.ApiEndpoint
